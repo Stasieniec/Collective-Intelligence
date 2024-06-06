@@ -87,8 +87,11 @@ class Bird(Agent):
                 elif distance_to_cursor <= 100:
                     s *= 1.2
 
+
+            avoidance_force = self.obstacle_avoidance(in_proximity)
+
             # Total force
-            f_total = (a+s+c+cursor_force)/self.config.mass
+            f_total = (a+s+c+cursor_force + avoidance_force)/self.config.mass
 
             if self.move.length() > sum_vel.length():
                 self.move.normalize() * sum_vel
@@ -103,6 +106,16 @@ class Bird(Agent):
             force = self.cursor_pos - self.pos
             print("Cursor Position:", self.cursor_pos)
             return force
+
+    def obstacle_avoidance(self,in_proximity):
+        avoidance_radius = 100
+        avoidance_force = Vector2(0,0)
+        for agent, dist in in_proximity:
+            if isinstance(agent, RedCube):
+                distance_to_cube = self.pos.distance_to(agent.pos)
+                if distance_to_cube < avoidance_radius:
+                    avoidance_force += self.pos - agent.pos
+        return avoidance_force
 
     def alignment(self,in_proximity):
         
