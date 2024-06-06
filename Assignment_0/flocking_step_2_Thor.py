@@ -19,7 +19,7 @@ class FlockingConfig(Config):
     #sum_pos: pg.math.Vector2 = 0,0
 
     # These should be left as is.
-    delta_time: float = 0.5       #or 3                         # To learn more https://gafferongames.com/post/integration_basics/ 
+    delta_time: float = 0.5      #or 3                         # To learn more https://gafferongames.com/post/integration_basics/ 
     mass: int = 20                                            
 
     def weights(self) -> tuple[float, float, float]:
@@ -94,9 +94,17 @@ class Bird(Agent):
         #END CODE -----------------
         
     def cursor_attraction(self):
-            force = self.cursor_pos - self.pos
-            print("Cursor Position:", self.cursor_pos)
+            distance_to_cursor = self.cursor_pos.distance_to(self.pos)
+            repulsion_radius = 10
+
+            if distance_to_cursor < repulsion_radius:
+                direction = self.cursor_pos - self.pos
+                force = -direction *10
+                return force
+            else:
+                force = self.cursor_pos - self.pos
             return force
+
 
     def alignment(self,in_proximity):
         
@@ -222,6 +230,6 @@ class FlockingLive(Simulation):
             #duration=10_000
         )
     )
-    .batch_spawn_agents(50, Bird, images=["images/bird.png"])
+    .batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
     .run()
 )
