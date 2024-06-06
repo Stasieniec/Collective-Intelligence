@@ -64,35 +64,36 @@ class Bird(Agent):
 
 
             cursor_force = Vector2(0, 0)
+
+            # When the boid is in the follow the cursor mode
             if self.flock_to_cursor:
                 cursor_force = self.cursor_attraction()
                 print("Cursor Force:", cursor_force)
-
                 distance_to_cursor = self.cursor_pos.distance_to(self.pos)
-                if distance_to_cursor > 50:
-                    cursor_force *= math.fabs(1 - (1 / distance_to_cursor))
-                    cursor_force = cursor_force.normalize()
-                else:
-                    cursor_force *= -1
-                    cursor_force = cursor_force.normalize()
-                
-            f_total = (a+s+c+cursor_force)/self.config.mass
 
-            #print("Cursor Position:", self.cursor_pos)
-            #print("Cursor Force:", cursor_force)
+                # Don't start too fast
+                cursor_force = cursor_force.normalize()
+
+                # Go faster when far away
+                if distance_to_cursor > 200:
+                    cursor_force *= 3       
+                
+                # The boids should not get stuck in the cursor position
+                if distance_to_cursor < 40:
+                    cursor_force *= -1
+                    s = s.normalize()
+                elif distance_to_cursor <= 50:
+                    s *= 1.1
+                elif distance_to_cursor <= 100:
+                    s *= 1.2
+
+            # Total force
+            f_total = (a+s+c+cursor_force)/self.config.mass
 
             if self.move.length() > sum_vel.length():
                 self.move.normalize() * sum_vel
-
-            #print("Alignment:", a)
-            #print("Separation:", s)
-            #print("Cohesion:", c)
-            #print("Cursor Force:", cursor_force)
-            #print("Total Force:", f_total)
-
-            # print(type(self.move))
-            # assert False
-
+            
+            # Move the boid
             self.move += f_total
             self.pos += self.move * self.config.delta_time
 
@@ -111,14 +112,9 @@ class Bird(Agent):
             sum_vel += vel
         
         avg_vel = sum_vel / len(in_proximity)
-    #***********
 
         Vboid = self.move
         alignment = avg_vel - Vboid
-
-        #move = self.move + alignment
-        
-        #self.pos += move
 
         return alignment, sum_vel
 
