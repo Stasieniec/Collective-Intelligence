@@ -13,4 +13,4 @@ To run a particular assignment, open the folder of this assignment in an editor 
 Do not open the repository folder, as relative paths won't work.
 
 ### Where is what?
-[videos](/videos)
+Each video is in a folder of the respective assignment.
