@@ -10,6 +10,7 @@ import arcade
 @deserialize
 @dataclass
 class FlockingConfig(Config):
+    #hello this is test
     # You can change these for different starting weights
     alignment_weight: float = 1.0
     cohesion_weight: float = 0.5
