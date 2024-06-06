@@ -143,21 +143,13 @@ class Bird(Agent):
 
         return cohesion
 
-#the closer boid is, the more it steers left or right
 
-#or for each boid, calculate the path ahead, and if it is blocked, change direction
-""" def obstacle_avoidance(self, obstacle):
-        # Avoid collision with obstacles at all cost
-    if self.distance(obstacle) < 45:
-		self.velocityX = -1 * (obstacle.real_x - self.rect.x)
-		self.velocityY = -1 * (obstacle.real_y - self.rect.y)
-
-    else:
-		self.velocityX += -1 * (obstacle.real_x - self.rect.x) / self.obstacle_avoidance_weight
-		self.velocityY += -1 * (obstacle.real_y - self.rect.y) / self.obstacle_avoidance_weight
-     """
-
-
+class RedCube(Agent):
+    def __init__(self, pos: Vector2, images: pg.Surface, simulation: Simulation, *args, **kwargs):
+        super().__init__([images], simulation, *args, **kwargs)
+        self.pos = pos
+    def change_position(self):
+        pass
 
 
 class Selection(Enum):
@@ -181,12 +173,9 @@ class FlockingLive(Simulation):
 
     def before_update(self):
         super().before_update()
-
-        #mouse_x, mouse_y = pg.mouse.get_pos()
-        #self.cursor_pos = Vector2(mouse_x, mouse_y)
-        
         for bird in self._agents:
-            bird.cursor_pos = self.cursor_pos
+            if isinstance(bird, Bird):
+                bird.cursor_pos = self.cursor_pos
 
         for event in pg.event.get():         
             
@@ -203,13 +192,23 @@ class FlockingLive(Simulation):
                     self.selection = Selection.SEPARATION
                 elif event.key == pg.K_m:
                     for agent in self._agents:
-                        agent.flock_to_cursor = not agent.flock_to_cursor
+                        if isinstance(agent, Bird):
+                            agent.flock_to_cursor = not agent.flock_to_cursor
             elif event.type == pg.MOUSEMOTION:
                 self.cursor_pos = Vector2(event.pos)
-            #    print("Cursor Position:", self.cursor_pos)
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    cube_pos = Vector2(event.pos)
+                    self.spawn_red_cube(cube_pos)
 
         a, c, s = self.config.weights()
         # print(f"A: {a:.1f} - C: {c:.1f} - S: {s:.1f}")
+
+    def spawn_red_cube(self, position: Vector2):
+        cube_image = "Assignment_0/images/red.png"
+        cube_image = pg.image.load(cube_image).convert_alpha()
+        cube = RedCube(pos=position, images=cube_image, simulation=self)
+        self._agents.add(cube)
 
 
 (
@@ -223,6 +222,7 @@ class FlockingLive(Simulation):
             #duration=10_000
         )
     )
-    .batch_spawn_agents(50, Bird, images=["images/bird.png"])
+    #.batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
+    .batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
     .run()
 )
