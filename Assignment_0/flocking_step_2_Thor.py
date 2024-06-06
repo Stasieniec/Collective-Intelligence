@@ -29,8 +29,8 @@ class FlockingConfig(Config):
 class Bird(Agent):
     config: FlockingConfig
 
-    def _init_(self, *args, **kwargs):
-        super()._init_(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.cursor_pos: Vector2 = Vector2(0, 0)
         self.flock_to_cursor = False
 
@@ -68,6 +68,7 @@ class Bird(Agent):
             if self.flock_to_cursor:
                 cursor_force = self.cursor_attraction()
                 print("Cursor Force:", cursor_force)
+
 
             distance_to_cursor = self.cursor_pos.distance_to(self.pos)
             cursor_force *= 1 / (distance_to_cursor + 1)
