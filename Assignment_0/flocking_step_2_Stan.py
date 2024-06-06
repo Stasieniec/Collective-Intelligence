@@ -6,6 +6,7 @@ from vi.config import Config, dataclass, deserialize
 import datetime
 from datetime import timedelta
 import arcade
+import math
 
 @deserialize
 @dataclass
@@ -37,9 +38,7 @@ class Bird(Agent):
     def get_alignment_weigth(self)-> float:
         return self.config.alignment_weight
     
-
-
-        
+    
     #cursor_pos: Vector2 = Vector2(0, 0)
 
     def change_position(self):
@@ -69,10 +68,14 @@ class Bird(Agent):
                 cursor_force = self.cursor_attraction()
                 print("Cursor Force:", cursor_force)
 
-
-            distance_to_cursor = self.cursor_pos.distance_to(self.pos)
-            cursor_force *= 1 / (distance_to_cursor + 1)
-
+                distance_to_cursor = self.cursor_pos.distance_to(self.pos)
+                if distance_to_cursor > 50:
+                    cursor_force *= math.fabs(1 - (1 / distance_to_cursor))
+                    cursor_force = cursor_force.normalize()
+                else:
+                    cursor_force *= -1
+                    cursor_force = cursor_force.normalize()
+                
             f_total = (a+s+c+cursor_force)/self.config.mass
 
             #print("Cursor Position:", self.cursor_pos)

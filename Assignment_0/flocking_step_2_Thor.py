@@ -37,9 +37,7 @@ class Bird(Agent):
     def get_alignment_weigth(self)-> float:
         return self.config.alignment_weight
     
-
-
-        
+    
     #cursor_pos: Vector2 = Vector2(0, 0)
 
     def change_position(self):
