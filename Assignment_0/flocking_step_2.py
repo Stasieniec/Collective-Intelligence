@@ -28,6 +28,7 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
+    cursor_pos: Vector2 = Vector2(0, 0)
 
     def get_alignment_weigth(self)-> float:
         return self.config.alignment_weight
@@ -44,8 +45,9 @@ class Bird(Agent):
         a = self.alignment() * self.config.alignment_weight
         s = self.separation() * self.config.separation_weight
         c = self.cohesion() * self.config.cohesion_weight
+        cursor_force = self.cursor_attraction()
 
-        f_total = (a+s+c)/self.config.mass
+        f_total = (a + s + c + cursor_force) / self.config.mass
 
         self.move += f_total
 
@@ -109,6 +111,11 @@ class Bird(Agent):
         cohesion = fc - Vboid
 
         return cohesion
+    
+    def cursor_attraction(self):
+        force = self.cursor_pos - self.pos
+        return force
+
 
 #the closer boid is, the more it steers left or right
 
@@ -157,6 +164,9 @@ class FlockingLive(Simulation):
                     self.selection = Selection.COHESION
                 elif event.key == pg.K_3:
                     self.selection = Selection.SEPARATION
+            elif event.type == pg.MOUSEMOTION:
+                cursor_pos = Vector2(event.pos)
+                # TODO Update cursor position for all agents
 
         a, c, s = self.config.weights()
         print(f"A: {a:.1f} - C: {c:.1f} - S: {s:.1f}")
