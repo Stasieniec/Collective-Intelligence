@@ -113,6 +113,9 @@ class Bird(Agent):
         return cohesion
     
     def cursor_attraction(self):
+        for event in pg.event.get():
+            if event.type == pg.MOUSEMOTION:
+                self.cursor_pos = Vector2(event.pos)
         force = self.cursor_pos - self.pos
         return force
 
@@ -164,9 +167,10 @@ class FlockingLive(Simulation):
                     self.selection = Selection.COHESION
                 elif event.key == pg.K_3:
                     self.selection = Selection.SEPARATION
-            elif event.type == pg.MOUSEMOTION:
-                cursor_pos = Vector2(event.pos)
-                # TODO Update cursor position for all agents
+            # TODO: Implement this for better time complexity
+            #elif event.type == pg.MOUSEMOTION:
+            #    cursor_pos = Vector2(event.pos)
+            #    # TODO Update cursor position for all agents
 
         a, c, s = self.config.weights()
         print(f"A: {a:.1f} - C: {c:.1f} - S: {s:.1f}")
