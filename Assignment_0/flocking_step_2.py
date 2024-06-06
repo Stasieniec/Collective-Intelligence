@@ -28,6 +28,12 @@ class FlockingConfig(Config):
 
 class Bird(Agent):
     config: FlockingConfig
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cursor_pos: Vector2 = Vector2(0, 0)
+
+        
     cursor_pos: Vector2 = Vector2(0, 0)
 
     def get_alignment_weigth(self)-> float:
