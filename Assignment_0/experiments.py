@@ -7,6 +7,8 @@ import datetime
 from datetime import timedelta
 import arcade
 import math
+import random
+import sys
 
 @deserialize
 @dataclass
@@ -35,6 +37,7 @@ class Bird(Agent):
         self.cursor_pos: Vector2 = Vector2(0, 0)
         self.flock_to_cursor = False
         self.cube_pos: Vector2 = Vector2(10,10)
+        self.flock_start_time = None
 
     def get_alignment_weigth(self)-> float:
         return self.config.alignment_weight
@@ -67,26 +70,47 @@ class Bird(Agent):
             cursor_force = Vector2(0, 0)
 
             # When the boid is in the follow the cursor mode
-            
-            cursor_force = self.cursor_attraction(self.cube_pos)
-            print("Cursor Force:", cursor_force)
-            distance_to_cursor = self.cursor_pos.distance_to(self.pos)
+            if self.flock_to_cursor:
 
-            # Don't start too fast
-            cursor_force = cursor_force.normalize()
+                if self.flock_start_time is None:
+                    self.flock_start_time = datetime.datetime.now()
 
-            # Go faster when far away
-            if distance_to_cursor > 200:
-                cursor_force *= 3       
-            
-            # The boids should not get stuck in the cursor position
-            if distance_to_cursor < 40:
-                cursor_force *= -1
-                s = s.normalize()
-            elif distance_to_cursor <= 50:
-                s *= 1.1
-            elif distance_to_cursor <= 100:
-                s *= 1.2
+
+                cursor_force = self.cursor_attraction()
+                print("Cursor Force:", cursor_force)
+                distance_to_cursor = self.cursor_pos.distance_to(self.pos)
+
+                # Don't start too fast
+                cursor_force = cursor_force.normalize()
+
+                # Go faster when far away
+                if distance_to_cursor > 200:
+                    cursor_force *= 3       
+                
+
+                cursor_force *= 9
+                # The boids should not get stuck in the cursor position
+                # if distance_to_cursor < 40:
+                #     cursor_force *= -1
+                #     s = s.normalize()
+                # elif distance_to_cursor <= 50:
+                #     s *= 1.1
+                # elif distance_to_cursor <= 100:
+                #     s *= 1.2
+
+                count = 0
+                for bird, dist in in_proximity:
+                    if isinstance(bird, Bird):
+                        count += 1
+                        if count == 40:
+                            elapsed_time = datetime.datetime.now() - self.flock_start_time
+                            print(count)
+                            print(elapsed_time)
+                            pg.quit()
+                            sys.exit()
+
+                    
+                print(count)
 
 
             avoidance_force = self.obstacle_avoidance(in_proximity)
@@ -100,12 +124,14 @@ class Bird(Agent):
             # Move the boid
             self.move += f_total
             self.pos += self.move * self.config.delta_time
+   
+        
 
         #END CODE -----------------
         
-    def cursor_attraction(self,cube_pos):
-            force = cube_pos - self.pos
-            #print("Cursor Position:", self.cursor_pos)
+    def cursor_attraction(self):
+            force = self.cursor_pos - self.pos
+            print("Cursor Position:", self.cursor_pos)
             return force
 
     def obstacle_avoidance(self,in_proximity):
@@ -116,7 +142,7 @@ class Bird(Agent):
                 distance_to_cube = self.pos.distance_to(agent.pos)
                 if distance_to_cube < avoidance_radius:
                     avoidance_force += self.pos - agent.pos
-        return avoidance_force
+        return avoidance_force *0.2
 
     def alignment(self,in_proximity):
         
@@ -198,7 +224,26 @@ class FlockingLive(Simulation):
             if isinstance(bird, Bird):
                 bird.cursor_pos = self.cursor_pos
 
-        self.spawn_green_cube(Vector2(10,10))
+        #self.spawn_green_cube(Vector2(10,10))
+
+        def get_circle_positions(center, radius, num_points):
+            return [
+                Vector2(
+                    center.x + math.cos(2 * math.pi / num_points * i) * radius,
+                    center.y + math.sin(2 * math.pi / num_points * i) * radius
+                )
+                for i in range(num_points)
+            ]
+
+        
+        window_center = Vector2(750/ 2, 750 / 2)
+        circle_radius = min(750, 750) / 2 - 50
+
+        # spawn in some red cubes around the middle
+        num_red_cubes = 0  
+        circle_positions = get_circle_positions(window_center, circle_radius, num_red_cubes)
+        for i in range(num_red_cubes):
+            self.spawn_red_cube(circle_positions[i])
 
         for event in pg.event.get():         
             
@@ -240,38 +285,38 @@ class FlockingLive(Simulation):
         self._agents.add(cube)
 
 
-# (
-#     FlockingLive(
-#         FlockingConfig(
-#             image_rotation=True,
-#             movement_speed=1,
-#             radius=50,
-#             #seed=1,
-#             fps_limit=0
-#             #duration=10_000
-#         )
-#     )
-#     #.batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
-#     .batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
-#     .run()
-# )
-
-
-from vi import Matrix
-
-matrix = Matrix(
-    duration=60 * 10,
-    #radius=[25, 50, 75],
-    radius = 50,
-    movement_speed=[0.5, 1.0, 2],
+(
+    FlockingLive(
+        FlockingConfig(
+            image_rotation=True,
+            movement_speed=5,
+            radius=50,
+            #seed=1,
+            fps_limit=0,
+            duration=10_000,
+        )
     )
+    #.batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
+    .batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
+    .run()
+)
 
-# Generate configurations for each experiment
-configs = matrix.to_configs(FlockingConfig)
 
-# Run simulations for each configuration
-for config in configs:
-    simulation = FlockingLive(config)
-    # Optionally, modify simulation parameters or add additional setup here
-    simulation.batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
-    simulation.run()
+# from vi import Matrix
+
+# matrix = Matrix(
+#     duration=60 * 10,
+#     #radius=[25, 50, 75],
+#     radius = 50,
+#     movement_speed=[0.5, 1.0, 2],
+#     )
+
+# # Generate configurations for each experiment
+# configs = matrix.to_configs(FlockingConfig)
+
+# # Run simulations for each configuration
+# for config in configs:
+#     simulation = FlockingLive(config)
+#     # Optionally, modify simulation parameters or add additional setup here
+#     simulation.batch_spawn_agents(50, Bird, images=["Assignment_0/images/bird.png"])
+#     simulation.run()
