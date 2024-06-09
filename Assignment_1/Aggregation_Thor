@@ -4,6 +4,17 @@ import random
 import math
 import pygame as pg
 
+        # little pseudocode:
+        # Wandering behavior
+        # if is_in_site:
+        #     if p_join:
+        #         joining_behavior()
+        #         if t_join:
+        #             still_behavior()
+        #             if p_leave:
+        #                 leaving_behavior()
+        #                 if t_leave:
+        #                     wandering_behavior()
 
 class AggregationConfig(Config):
     delta_time: float = 0.5
@@ -13,7 +24,7 @@ class AggregationConfig(Config):
     max_angle_change: float = 30.0
     p_change_direction: float = 0.1
 
-    t_join_init: float = 100.0                  # The base time steps needed to stop
+    t_join_base: float = 100.0                  # The base time steps needed to stop
     t_join_noise: float = 25000.0               # The noise to add to the base time steps
 
     p_base_leaving: float = 0.5                 # The base probability for leaving 
@@ -38,27 +49,6 @@ class Particle(Agent):
 
     def change_position(self):
         self.there_is_no_escape()  # The Agents teleport to the opposite side of the screen
-        #self.wandering()  # Agent performs the walking/wandering behavior
-
-        if self.state == 'wandering':           # Agent performs the walking/wandering behavior
-            self.wandering()
-        elif self.state == 'joining':           # Agent performs the joining behavior
-            self.joining()
-            self.wandering()
-        elif self.state == 'still':             # Agent performs the still behavior
-            self.still()
-
-        # little pseudocode:
-        # Wandering behavior
-        # if is_in_site:
-        #     if p_join:
-        #         joining_behavior()
-        #         if t_join:
-        #             still_behavior()
-        #             if p_leave:
-        #                 leaving_behavior()
-        #                 if t_leave:
-        #                     wandering_behavior()
 
     def wandering(self):  
         '''
@@ -76,13 +66,12 @@ class Particle(Agent):
         # Update the agent's position
         self.pos += self.move * self.config.delta_time
 
-
     def joining(self):
         '''
         timer for transitions from wandering to still based on t_join duration
         '''
     
-        self.t_join = self.config.t_join_init + abs(random.gauss(0, self.config.t_join_noise))
+        self.t_join = self.config.t_join_base + abs(random.gauss(0, self.config.t_join_noise))
         print(self.t_join)
 
         if self.timer > self.t_join:
@@ -119,7 +108,7 @@ class Particle(Agent):
         the more neighbours there are, the less chance of leaving
 
         p_leave = p_base / N
-        
+
         '''
         neighbour_count = len(in_proximity)
         # Dividing the base probability by the neighbour count to get the inverse
@@ -128,6 +117,18 @@ class Particle(Agent):
         return p_leaving
 
     def update(self):
+
+        if self.state == 'wandering':           # Agent performs the walking/wandering behavior
+            self.wandering()
+        elif self.state == 'joining':           # Agent performs the joining behavior
+            self.joining()
+            self.wandering()
+        elif self.state == 'still':             # Agent performs the still behavior
+            self.still()
+        elif self.state == 'leaving':
+            self.wandering()
+    
+
         return super().update()
     
 
