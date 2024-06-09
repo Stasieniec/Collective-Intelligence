@@ -2,6 +2,7 @@ from vi import Agent, Simulation, Config
 from pygame.math import Vector2
 import random
 import math
+import pygame as pg
 
 
 class AggregationConfig(Config):
@@ -10,6 +11,8 @@ class AggregationConfig(Config):
     movement_speed: float = 1.0
     max_angle_change: float = 30.0
     p_change_direction: float = 0.1
+    t_join_init: float = 100.0                # The base time steps needed to stop
+    t_join_noise: float = 25000.0               # The noise to add to the base time steps
 
 
 class Particle(Agent):
@@ -17,15 +20,27 @@ class Particle(Agent):
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
-              
+
         # Initialise move to a random angle
         if move is None:
             angle = random.uniform(0, 360)
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
+        # Initialise the state of the agent
+        self.state = 'wandering'
+        self.timer = 0
+
     def change_position(self):
         self.there_is_no_escape()  # The Agents teleport to the opposite side of the screen
-        self.walking()  # Agent performs the walking/wandering behavior
+        #self.wandering()  # Agent performs the walking/wandering behavior
+
+        if self.state == 'wandering':           # Agent performs the walking/wandering behavior
+            self.wandering()
+        elif self.state == 'joining':           # Agent performs the joining behavior
+            self.joining()
+            self.wandering()
+        elif self.state == 'still':             # Agent performs the still behavior
+            self.still()
 
         # Wandering behavior
         # if is_in_site:
@@ -38,7 +53,10 @@ class Particle(Agent):
         #                 if t_leave:
         #                     wandering_behavior()
 
-    def walking(self):    
+    def wandering(self):  
+        '''
+        Agent elicits random walking behaviour
+        '''  
         # Probability to change direction
         if random.random() < self.config.p_change_direction:
             # Choose a random angle to rotate the current direction by
@@ -51,11 +69,24 @@ class Particle(Agent):
         # Update the agent's position
         self.pos += self.move * self.config.delta_time
 
+
     def joining(self):
-        pass
+        '''
+        transitions from wandering to joining to still based on a t_join duration
+        '''
+    
+        self.t_join = self.config.t_join_init + abs(random.gauss(0, self.config.t_join_noise))
+        print(self.t_join)
+
+        if self.timer > self.t_join:
+            print("Still")
+            self.state = 'still'
+        else:
+            self.timer += self.config.delta_time
 
     def still(self):
-        pass
+        self.freeze_movement()
+        #self.wandering()
 
     def leaving(self):
         pass
@@ -69,6 +100,13 @@ class AggregationSimulation(Simulation):
 
     def before_update(self):
         super().before_update()
+        
+        #temporarily testing the joining -> still functionality by pressing 'M'   
+        for event in pg.event.get():
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_m:
+                    for agent in self._agents:
+                        agent.state = "joining"
 
 
 (
