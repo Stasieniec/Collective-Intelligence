@@ -1,54 +1,84 @@
 from vi import Agent, Simulation, Config
+from pygame.math import Vector2
+import random
+import math
+
+
+class AggregationConfig(Config):
+    delta_time: float = 0.5
+    mass: int = 20  
+    movement_speed: float = 1.0
+    max_angle_change: float = 30.0
+    p_change_direction: float = 0.1
 
 
 class Particle(Agent):
+    config: AggregationConfig
 
-
+    def __init__(self, images, simulation, pos=None, move=None):
+        super().__init__(images, simulation, pos, move)
+              
+        # Initialise move to a random angle
+        if move is None:
+            angle = random.uniform(0, 360)
+            self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
     def change_position(self):
+        self.there_is_no_escape()  # The Agents teleport to the opposite side of the screen
+        self.walking()  # Agent performs the walking/wandering behavior
 
-        #wandering behaviour()
-        #if is_in_site:
-        #       if p_join:
-        #           joining_behaviour()
+        # Wandering behavior
+        # if is_in_site:
+        #     if p_join:
+        #         joining_behavior()
+        #         if t_join:
+        #             still_behavior()
+        #             if p_leave:
+        #                 leaving_behavior()
+        #                 if t_leave:
+        #                     wandering_behavior()
 
-        #           if t_join:
-        #               still_behaviour()
+    def walking(self):    
+        # Probability to change direction
+        if random.random() < self.config.p_change_direction:
+            # Choose a random angle to rotate the current direction by
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            # Rotate the move by the chosen angle
+            self.move = self.move.rotate(angle_change)
+        
+        # Normalise move to keep the speed constant
+        self.move = self.move.normalize() * self.config.movement_speed
+        # Update the agent's position
+        self.pos += self.move * self.config.delta_time
 
-        #               if p_leave
-        #                   leaving_behaviour()
-
-        #                   if t_leave:
-        #                       wandering_behaviour()
-
-
-
-
-        return super().change_position()
-    
-
-    def walking():
+    def joining(self):
         pass
 
-    def joining():
+    def still(self):
         pass
 
-    def still():
+    def leaving(self):
         pass
 
-    def leaving():
-        pass
-    
-    
     def update(self):
         return super().update()
     
 
+class AggregationSimulation(Simulation):
+    config: AggregationConfig
+
+    def before_update(self):
+        super().before_update()
+
 
 (
-
-    Simulation(Config(duration = 10_000, fps_limit = 0,seed = 1))
-    .batch_spawn_agents(100,Particle,images= ["Assignment_0/images/green.png"])
+    AggregationSimulation(
+        AggregationConfig(
+            duration=10_000, 
+            fps_limit=120,
+            seed=1
+        )
+    )
+    .batch_spawn_agents(10, Particle, images=["Assignment_0/images/green.png"])
     .run()
-
 )
