@@ -28,6 +28,7 @@ class Particle(Agent):
 
         # Initialise the state of the agent
         self.state = 'wandering'
+        # Initialise the joining timer
         self.timer = 0
 
     def change_position(self):
@@ -42,6 +43,7 @@ class Particle(Agent):
         elif self.state == 'still':             # Agent performs the still behavior
             self.still()
 
+        # little pseudocode:
         # Wandering behavior
         # if is_in_site:
         #     if p_join:
@@ -72,7 +74,7 @@ class Particle(Agent):
 
     def joining(self):
         '''
-        transitions from wandering to joining to still based on a t_join duration
+        timer for transitions from wandering to still based on t_join duration
         '''
     
         self.t_join = self.config.t_join_init + abs(random.gauss(0, self.config.t_join_noise))
