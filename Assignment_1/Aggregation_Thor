@@ -27,8 +27,10 @@ class AggregationConfig(Config):
     t_join_base: float = 100.0                  # The base time steps needed to stop
     t_join_noise: float = 2000.0               # The noise to add to the base time steps
 
-    p_base_leaving: float = 0.5                 # The base probability for leaving 
+    p_base_leaving: float = 0.05                 # The base probability for leaving 
     p_base_joining: float = 0.5                 # The base probability for joining 
+
+    time_step_d: int = 200
 
 
 class Particle(Agent):
@@ -65,7 +67,7 @@ class Particle(Agent):
         # Update the agent's position
         self.pos += self.move * self.config.delta_time
 
-        if self.checkInSite():
+        if self.checkInSite() and self.joiningProbability(self.in_proximity_accuracy().count()):
             #print("joining")
             self.state = 'joining'
 
@@ -75,10 +77,10 @@ class Particle(Agent):
         '''
     
         self.t_join = self.config.t_join_base + abs(random.gauss(0, self.config.t_join_noise))
-        print(self.t_join)
+        #print(self.t_join)
 
         if self.timer > self.t_join:
-            print("Still")
+            #print("Still")
             self.state = 'still'
         else:
             self.timer += self.config.delta_time
@@ -90,21 +92,38 @@ class Particle(Agent):
         p_join = p_base * N
 
         '''
-        neighbour_count = len(in_proximity)
+        neighbour_count = in_proximity
         # Directly multiplying neighbour count with base probability
         p_joining = self.config.p_base_joining * (neighbour_count+1)
         return p_joining
 
     def still(self):
         self.freeze_movement()
-        #self.wandering()
-
+        rand = random.random()
         in_proximity = self.in_proximity_accuracy().count()
-        #for agent,dist in list(self.in_proximity):
+        print(AggregationSimulation.global_delta_time)
+        if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
+            print(self.leavingProbability(in_proximity))
+            if rand < self.leavingProbability(in_proximity):
+                print(f"random int",{rand})
+                print("leaving")
+                self.state = 'leaving'
+                self.continue_movement()
 
 
     def leaving(self):
-        pass
+        if random.random() < self.config.p_change_direction:
+            # Choose a random angle to rotate the current direction by
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            # Rotate the move by the chosen angle
+            self.move = self.move.rotate(angle_change)
+        
+        # Normalise move to keep the speed constant
+        self.move = self.move.normalize() * self.config.movement_speed
+        # Update the agent's position
+        self.pos += self.move * self.config.delta_time
+        
+        
 
     def leavingProbability(self, in_proximity):
         '''
@@ -113,7 +132,7 @@ class Particle(Agent):
         p_leave = p_base / N
 
         '''
-        neighbour_count = len(in_proximity)
+        neighbour_count = in_proximity
         # Dividing the base probability by the neighbour count to get the inverse
         p_leaving = self.config.p_base_leaving / (1 + neighbour_count)
 
@@ -133,14 +152,9 @@ class Particle(Agent):
         elif self.state == 'still':             # Agent performs the still behavior
             self.still()
         elif self.state == 'leaving':
-            self.wandering()
-    
-        #print(self.obstacle_intersections(scale = 1))
-        #intersections = list(self.obstacle_intersections())
-        #print(len((intersections)))
-        #print(self.obstacle_intersections())
-        # if len(intersections) > 0:
-        #     print(intersections)
+            self.leaving()
+            if self.checkInSite():
+                self.state = 'wandering'
 
         return super().update()
     
@@ -152,8 +166,12 @@ class AggregationSimulation(Simulation):
     config: AggregationConfig
     init_pos: Vector2 = Vector2(0, 0)
 
+    global_delta_time: int = 0
+
     def before_update(self):
         super().before_update()
+
+        AggregationSimulation.global_delta_time += 1
         
         #temporarily testing the joining -> still functionality by pressing 'M'   
         for event in pg.event.get():
@@ -170,10 +188,11 @@ class AggregationSimulation(Simulation):
             duration=10_000, 
             fps_limit=60,
             seed=1,
-            movement_speed= 1
+            movement_speed= 1,
+            radius=50
         )
     )
-    .batch_spawn_agents(10, Particle, images=["Assignment_0/images/green.png"])
+    .batch_spawn_agents(50, Particle, images=["Assignment_0/images/green.png"])
     .spawn_obstacle("Assignment_0/images/bubble-full.png",x=375, y=375)
     .run()
 )
