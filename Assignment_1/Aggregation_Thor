@@ -1,22 +1,2 @@
 from vi import Agent, Simulation, Config
 
-
-#class inheriting Agent behaviour
-class Particle(Agent): 
-
-#to make our own behaviour, make an update function
-    def update(self):
-        return super().update()
-
-
-
-
-print(
-(
-
-    Simulation(Config(duration = 5*60))
-    .batch_spawn_agents(100,Particle,images= ["Assignment_0/images/green.png"])
-    .run()
-    .snapshots()            #to show the data of each Agent
-)
-)
