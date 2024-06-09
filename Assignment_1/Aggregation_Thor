@@ -37,11 +37,10 @@ class Particle(Agent):
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
 
-        # Initialise move to a random angle
+        # Initialise move to a random angle, (0 to 360)
         if move is None:
             angle = random.uniform(0, 360)
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
-
         # Initialise the state of the agent
         self.state = 'wandering'
         # Initialise the joining timer
@@ -65,6 +64,10 @@ class Particle(Agent):
         self.move = self.move.normalize() * self.config.movement_speed
         # Update the agent's position
         self.pos += self.move * self.config.delta_time
+
+        if self.checkInSite():
+            print("joining")
+            self.state = 'still'
 
     def joining(self):
         '''
@@ -116,6 +119,10 @@ class Particle(Agent):
 
         return p_leaving
 
+    def checkInSite(self):
+        intersections = list(self.obstacle_intersections())
+        return bool(intersections)
+
     def update(self):
 
         if self.state == 'wandering':           # Agent performs the walking/wandering behavior
@@ -128,12 +135,22 @@ class Particle(Agent):
         elif self.state == 'leaving':
             self.wandering()
     
+        #print(self.obstacle_intersections(scale = 1))
+        intersections = list(self.obstacle_intersections())
+        #print(len((intersections)))
+        #print(self.obstacle_intersections())
+        if len(intersections) > 0:
+            print(intersections)
 
         return super().update()
     
 
+
+
+
 class AggregationSimulation(Simulation):
     config: AggregationConfig
+    init_pos: Vector2 = Vector2(0, 0)
 
     def before_update(self):
         super().before_update()
@@ -146,14 +163,17 @@ class AggregationSimulation(Simulation):
                         agent.state = "joining"
 
 
+
 (
     AggregationSimulation(
         AggregationConfig(
             duration=10_000, 
-            fps_limit=120,
-            seed=1
+            fps_limit=60,
+            seed=1,
+            movement_speed= 1
         )
     )
     .batch_spawn_agents(10, Particle, images=["Assignment_0/images/green.png"])
+    .spawn_site("Assignment_0/images/bubble-full.png",x=375, y=375)
     .run()
 )
