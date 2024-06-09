@@ -25,7 +25,7 @@ class AggregationConfig(Config):
     p_change_direction: float = 0.1
 
     t_join_base: float = 100.0                  # The base time steps needed to stop
-    t_join_noise: float = 25000.0               # The noise to add to the base time steps
+    t_join_noise: float = 2000.0               # The noise to add to the base time steps
 
     p_base_leaving: float = 0.5                 # The base probability for leaving 
     p_base_joining: float = 0.5                 # The base probability for joining 
@@ -66,8 +66,8 @@ class Particle(Agent):
         self.pos += self.move * self.config.delta_time
 
         if self.checkInSite():
-            print("joining")
-            self.state = 'still'
+            #print("joining")
+            self.state = 'joining'
 
     def joining(self):
         '''
@@ -136,11 +136,11 @@ class Particle(Agent):
             self.wandering()
     
         #print(self.obstacle_intersections(scale = 1))
-        intersections = list(self.obstacle_intersections())
+        #intersections = list(self.obstacle_intersections())
         #print(len((intersections)))
         #print(self.obstacle_intersections())
-        if len(intersections) > 0:
-            print(intersections)
+        # if len(intersections) > 0:
+        #     print(intersections)
 
         return super().update()
     
@@ -174,6 +174,6 @@ class AggregationSimulation(Simulation):
         )
     )
     .batch_spawn_agents(10, Particle, images=["Assignment_0/images/green.png"])
-    .spawn_site("Assignment_0/images/bubble-full.png",x=375, y=375)
+    .spawn_obstacle("Assignment_0/images/bubble-full.png",x=375, y=375)
     .run()
 )
