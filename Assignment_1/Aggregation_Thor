@@ -1,2 +1,54 @@
 from vi import Agent, Simulation, Config
 
+
+class Particle(Agent):
+
+
+
+    def change_position(self):
+
+        #wandering behaviour()
+        #if is_in_site:
+        #       if p_join:
+        #           joining_behaviour()
+
+        #           if t_join:
+        #               still_behaviour()
+
+        #               if p_leave
+        #                   leaving_behaviour()
+
+        #                   if t_leave:
+        #                       wandering_behaviour()
+
+
+
+
+        return super().change_position()
+    
+
+    def walking():
+        pass
+
+    def joining():
+        pass
+
+    def still():
+        pass
+
+    def leaving():
+        pass
+    
+    
+    def update(self):
+        return super().update()
+    
+
+
+(
+
+    Simulation(Config(duration = 10_000, fps_limit = 0,seed = 1))
+    .batch_spawn_agents(100,Particle,images= ["Assignment_0/images/green.png"])
+    .run()
+
+)
