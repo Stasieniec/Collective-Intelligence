@@ -9,10 +9,15 @@ class AggregationConfig(Config):
     delta_time: float = 0.5
     mass: int = 20  
     movement_speed: float = 1.0
+
     max_angle_change: float = 30.0
     p_change_direction: float = 0.1
-    t_join_init: float = 100.0                # The base time steps needed to stop
+
+    t_join_init: float = 100.0                  # The base time steps needed to stop
     t_join_noise: float = 25000.0               # The noise to add to the base time steps
+
+    p_base_leaving: float = 0.5                 # The base probability for leaving 
+    p_base_joining: float = 0.5                 # The base probability for joining 
 
 
 class Particle(Agent):
@@ -86,12 +91,41 @@ class Particle(Agent):
         else:
             self.timer += self.config.delta_time
 
+    def joiningProbability(self, in_proximity):
+        ''' 
+        the more neighbours, the more chance of joining
+
+        p_join = p_base * N
+
+        '''
+        neighbour_count = len(in_proximity)
+        # Directly multiplying neighbour count with base probability
+        p_joining = self.config.p_base_joining * (neighbour_count+1)
+        return p_joining
+
     def still(self):
         self.freeze_movement()
         #self.wandering()
 
+        in_proximity = self.in_proximity_accuracy().count()
+        #for agent,dist in list(self.in_proximity):
+
+
     def leaving(self):
         pass
+
+    def leavingProbability(self, in_proximity):
+        '''
+        the more neighbours there are, the less chance of leaving
+
+        p_leave = p_base / N
+        
+        '''
+        neighbour_count = len(in_proximity)
+        # Dividing the base probability by the neighbour count to get the inverse
+        p_leaving = self.config.p_base_leaving / (1 + neighbour_count)
+
+        return p_leaving
 
     def update(self):
         return super().update()
