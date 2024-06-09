@@ -4,25 +4,14 @@ import random
 import math
 import pygame as pg
 
-        # little pseudocode:
-        # Wandering behavior
-        # if is_in_site:
-        #     if p_join:
-        #         joining_behavior()
-        #         if t_join:
-        #             still_behavior()
-        #             if p_leave:
-        #                 leaving_behavior()
-        #                 if t_leave:
-        #                     wandering_behavior()
 
 class AggregationConfig(Config):
     delta_time: float = 0.5
     mass: int = 20  
     movement_speed: float = 1.0
 
-    max_angle_change: float = 30.0
-    p_change_direction: float = 0.1
+    max_angle_change: float = 30.0              # The maximum angle to change direction into, small for smoothness
+    p_change_direction: float = 0.1             # The probability of an agent changing direction, is small for smoothness
 
     t_join_base: float = 100.0                  # The base time steps needed to stop
     t_join_noise: float = 2000.0               # The noise to add to the base time steps
@@ -30,7 +19,7 @@ class AggregationConfig(Config):
     p_base_leaving: float = 0.05                 # The base probability for leaving 
     p_base_joining: float = 0.5                 # The base probability for joining 
 
-    time_step_d: int = 200
+    time_step_d: int = 200                      # The number of time steps before checking to leave
 
 
 class Particle(Agent):
@@ -98,16 +87,23 @@ class Particle(Agent):
         return p_joining
 
     def still(self):
+        # Freeze the current movement to stay still
         self.freeze_movement()
+        # Pick a random float for the probability below
         rand = random.random()
+        # Count the number of neighbours in the radius
         in_proximity = self.in_proximity_accuracy().count()
-        print(AggregationSimulation.global_delta_time)
+        print(AggregationSimulation.global_delta_time) #debugging
+        # Calculate when to consider leaving every 'd' time steps
         if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
-            print(self.leavingProbability(in_proximity))
+            print(self.leavingProbability(in_proximity)) #debugging
+
             if rand < self.leavingProbability(in_proximity):
-                print(f"random int",{rand})
+                print(f"random int",{rand}) 
                 print("leaving")
+                # Change the state to leaving
                 self.state = 'leaving'
+                # Continue the movement to start wandering again
                 self.continue_movement()
 
 
@@ -151,10 +147,11 @@ class Particle(Agent):
             self.wandering()
         elif self.state == 'still':             # Agent performs the still behavior
             self.still()
-        elif self.state == 'leaving':
+        elif self.state == 'leaving':           # Agent performs the leaving behaviour
             self.leaving()
-            if self.checkInSite():
-                self.state = 'wandering'
+            # Checks if the agent has crossed the site boundary
+            if self.checkInSite():              
+                self.state = 'wandering'   
 
         return super().update()
     
