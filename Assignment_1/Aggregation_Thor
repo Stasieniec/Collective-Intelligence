@@ -10,8 +10,7 @@ import math
 ++  Make so that when agent leaves the site, joining is reset,
         because at the moment the agents can stop outside the site
 ++
-++  Include obstacle avoidance, so that the edge of screen is blocked 
-        and so agents dont collide with eachother
+++  Include obstacle avoidance, so that so agents dont collide with eachother
 ++
 ++ 
 ++
@@ -54,19 +53,46 @@ class Particle(Agent):
     def change_position(self):
         self.there_is_no_escape()  # The Agents teleport to the opposite side of the screen
 
+    def obstacle_avoidance(self,next_step):
+        
+        while self.is_obstacle(next_step):
+            # If an obstacle is detected, try different angles
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            self.move = self.move.rotate(angle_change)
+            next_step = self.pos + self.move * self.config.delta_time
+        
+
+    
+    
+    def is_obstacle(self, position):
+        # Check if the position is within the window dimensions
+        if position.x < 0 or position.x >= 750 or position.y < 0 or position.y >= 750:
+            return True
+        return False
+
     def wandering(self):  
+        '''
+        The Agent elicits a random walking behaviour by randomly choosing an angle to add to its position
+        '''
         if random.random() < self.config.p_change_direction:
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
         
+        # Move is normalized and multiplied by the velocity so it can move
         self.move = self.move.normalize() * self.config.movement_speed
+
+        # Calculate the next step to avoid obstacles 
+        next_step = self.pos + self.move * self.config.delta_time
+        # Pass in the next step to obstacle avoidance logic
+        self.obstacle_avoidance(next_step)
+        
         self.pos += self.move * self.config.delta_time
 
     def joining(self):
         '''
-        timer for transitions from wandering to still based on t_join duration
+        Timer for transitions from wandering to still based on t_join duration
         '''
-        self.wandering()  # Let the agent to keep moving
+        self.wandering()  # Let the agent keep moving
 
         if self.timer > self.t_join:
                 self.state = 'still'
@@ -74,7 +100,6 @@ class Particle(Agent):
                 
         else:
             self.timer += self.config.delta_time
-
 
     def joiningProbability(self, in_proximity):
         '''
