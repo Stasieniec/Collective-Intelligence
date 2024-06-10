@@ -4,6 +4,8 @@ import random
 import pygame as pg
 import math
 from PIL import Image
+import polars as pl
+import seaborn as sns
 
 
 class AggregationConfig(Config):
@@ -17,7 +19,7 @@ class AggregationConfig(Config):
     p_base_leaving: float = 0.1                     # Old
     p_base_joining: float = 0.5                     # Old
     a: float = 0.6                                  # New value for joining probability
-    b: float = 2.6                                  # New value for leaving probability
+    b: float = 2.1                                  # New value for leaving probability
     time_step_d: int = 40                           # Number of time steps 'd' for sampling join/leave probability
     site_width: int = 0                             
     site_height: int = 0                
@@ -203,6 +205,7 @@ class AggregationSimulation(Simulation):
                     for agent in self._agents:
                         agent.state = "joining"
 
+df = (
 (
     AggregationSimulation(
         AggregationConfig(
@@ -217,4 +220,15 @@ class AggregationSimulation(Simulation):
     .spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375)
     .spawn_site("Assignment_0/images/bubble-full-resized.png", x=500, y=375)
     .run()
+    .snapshots 
+    .group_by(["frame","image_index"])
+    .agg(pl.count("id").alias("agents"))
+    .sort(["frame", "image_index"])
+
 )
+)
+
+print(df)
+
+plot = sns.relplot(x=df["frame"], y=df["agents"], hue=df["image_index"])
+plot.savefig("agents.png", dpi=300)
