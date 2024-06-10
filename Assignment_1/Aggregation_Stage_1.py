@@ -210,7 +210,7 @@ class AggregationSimulation(Simulation):
             fps_limit=0,
             seed=1,
             movement_speed=1,
-            radius=75
+            radius=50
         )
     )
     .batch_spawn_agents(50, Particle, images=["Assignment_0/images/green.png"])

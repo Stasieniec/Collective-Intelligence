@@ -16,7 +16,7 @@ class AggregationConfig(Config):
     p_base_leaving: float = 0.1                     # Old
     p_base_joining: float = 0.5                     # Old
     a: float = 0.6                                  # New value for joining probability
-    b: float = 2.6                                  # New value for leaving probability
+    b: float = 2.2                                  # New value for leaving probability
     time_step_d: int = 40                           # Number of time steps 'd' for sampling join/leave probability
     site_width: int = 0                             
     site_height: int = 0                
@@ -80,6 +80,7 @@ class Particle(Agent):
 
     def joiningProbability(self, in_proximity):
         '''
+        https://research.vu.nl/ws/portalfiles/portal/233064455/On_self_organised_aggregation_dynamics_in_swarms_of_robots_with_informed_robots.pdf
         https://hal.science/hal-02082903v1/file/Self_organised_Aggregation_in_Swarms_of_Robots_with_Informed_Robots.pdf
         Pstay = 0.03 + 0.48 ∗ (1 − e ^−an);
         
@@ -122,6 +123,7 @@ class Particle(Agent):
 
     def leavingProbability(self, in_proximity):
         '''
+        https://research.vu.nl/ws/portalfiles/portal/233064455/On_self_organised_aggregation_dynamics_in_swarms_of_robots_with_informed_robots.pdf
         https://hal.science/hal-02082903v1/file/Self_organised_Aggregation_in_Swarms_of_Robots_with_Informed_Robots.pdf
         
         p_leave = e^−bn;
