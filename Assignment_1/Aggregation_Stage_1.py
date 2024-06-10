@@ -1,195 +1,220 @@
 from vi import Agent, Simulation, Config
 from pygame.math import Vector2
 import random
-import math
 import pygame as pg
+import math
+from PIL import Image
 
 
 class AggregationConfig(Config):
-    delta_time: float = 0.5
-    mass: int = 20  
-    movement_speed: float = 1.0
-
-    max_angle_change: float = 30.0              # The maximum angle to change direction into, small for smoothness
-    p_change_direction: float = 0.1             # The probability of an agent changing direction, is small for smoothness
-
-    t_join_base: float = 100.0                  # The base time steps needed to stop
-    t_join_noise: float = 2000.0               # The noise to add to the base time steps
-
-    p_base_leaving: float = 0.05                 # The base probability for leaving 
-    p_base_joining: float = 0.5                 # The base probability for joining 
-
-    time_step_d: int = 200                      # The number of time steps before checking to leave
-
+    delta_time: float = 0.5                         # Value for time steps
+    mass: int = 20
+    movement_speed: float = 1                       # Velocity of the Agents
+    max_angle_change: float = 30.0                  # The maximum angle the Agent can change direction to
+    p_change_direction: float = 0.1                 # The probability of changing direction
+    t_join_base: float = 50.0                       # The base time steps before stopping
+    t_join_noise: float = 5.0                       # The gaussian noise added to the base time steps
+    p_base_leaving: float = 0.1                     # Old
+    p_base_joining: float = 0.5                     # Old
+    a: float = 0.6                                  # New value for joining probability
+    b: float = 2.6                                  # New value for leaving probability
+    time_step_d: int = 40                           # Number of time steps 'd' for sampling join/leave probability
+    site_width: int = 0                             
+    site_height: int = 0                
 
 class Particle(Agent):
     config: AggregationConfig
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
-
-        # Initialise move to a random angle, (0 to 360)
-        if move is None:
+        # Initialise the movement direction with a random angle
+        if move is None:                            
             angle = random.uniform(0, 360)
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
-        # Initialise the state of the agent
+        # Initialise the state of the agent to be wandering
         self.state = 'wandering'
-        # Initialise the joining timer
         self.timer = 0
 
     def change_position(self):
-        self.there_is_no_escape()  # The Agents teleport to the opposite side of the screen
+        self.there_is_no_escape()
 
-    def wandering(self):  
+    def obstacle_avoidance(self, next_step):
         '''
-        Agent elicits random walking behaviour
-        '''  
-        # Probability to change direction
-        if random.random() < self.config.p_change_direction:
-            # Choose a random angle to rotate the current direction by
+        Checks whether the next step is colliding with an obstacle
+        '''
+        while self.is_obstacle(next_step):
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
-            # Rotate the move by the chosen angle
+            self.move = self.move.rotate(angle_change)
+            next_step = self.pos + self.move * self.config.delta_time
+
+    def is_obstacle(self, position):
+        if position.x < 0 or position.x >= 750 or position.y < 0 or position.y >= 750:
+            return True
+        return False
+
+    def wandering(self):
+        '''
+        Elicits a random walking behaviour of the Agent
+        by picking a random angle +- 30 degrees,
+        while checking if the next step is an obstacle
+        
+        '''
+        if random.random() < self.config.p_change_direction:
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
         
-        # Normalise move to keep the speed constant
         self.move = self.move.normalize() * self.config.movement_speed
-        # Update the agent's position
+        next_step = self.pos + self.move * self.config.delta_time
+        self.obstacle_avoidance(next_step)
         self.pos += self.move * self.config.delta_time
-
-        if self.checkInSite() and self.joiningProbability(self.in_proximity_accuracy().count()):
-            #print("joining")
-            self.state = 'joining'
 
     def joining(self):
         '''
-        timer for transitions from wandering to still based on t_join duration
+        A timer for when to switch to still state
         '''
-    
-        self.t_join = self.config.t_join_base + abs(random.gauss(0, self.config.t_join_noise))
-        #print(self.t_join)
-
+        self.wandering()
         if self.timer > self.t_join:
-            #print("Still")
             self.state = 'still'
+            print("State changed to still")
         else:
             self.timer += self.config.delta_time
 
     def joiningProbability(self, in_proximity):
-        ''' 
-        the more neighbours, the more chance of joining
-
-        p_join = p_base * N
-
         '''
-        neighbour_count = in_proximity
-        # Directly multiplying neighbour count with base probability
-        p_joining = self.config.p_base_joining * (neighbour_count+1)
-        return p_joining
+        https://hal.science/hal-02082903v1/file/Self_organised_Aggregation_in_Swarms_of_Robots_with_Informed_Robots.pdf
+        Pstay = 0.03 + 0.48 ∗ (1 − e ^−an);
+        
+        '''
+        p_stay = 0.03 + 0.48 * (1 - math.exp(-self.config.a * (in_proximity + 1)))
+        return p_stay
 
     def still(self):
-        # Freeze the current movement to stay still
-        self.freeze_movement()
-        # Pick a random float for the probability below
-        rand = random.random()
-        # Count the number of neighbours in the radius
-        in_proximity = self.in_proximity_accuracy().count()
-        print(AggregationSimulation.global_delta_time) #debugging
-        # Calculate when to consider leaving every 'd' time steps
-        if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
-            print(self.leavingProbability(in_proximity)) #debugging
 
+        '''
+        Method for freezing the movement of the agent, if in the site
+
+        '''
+        if not self.checkInSite():
+            print(f"Agent left the site, changing state to 'wandering'. Agent position: {self.pos}")
+            self.state = 'wandering'
+            return
+
+        self.freeze_movement()
+        #print("freezing")
+
+        rand = random.random()
+        in_proximity = self.in_proximity_performance().count()
+
+        # Every d time steps, try to leave the site
+        if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
             if rand < self.leavingProbability(in_proximity):
-                print(f"random int",{rand}) 
-                print("leaving")
-                # Change the state to leaving
                 self.state = 'leaving'
-                # Continue the movement to start wandering again
                 self.continue_movement()
 
-
     def leaving(self):
-        if random.random() < self.config.p_change_direction:
-            # Choose a random angle to rotate the current direction by
-            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
-            # Rotate the move by the chosen angle
-            self.move = self.move.rotate(angle_change)
-        
-        # Normalise move to keep the speed constant
-        self.move = self.move.normalize() * self.config.movement_speed
-        # Update the agent's position
-        self.pos += self.move * self.config.delta_time
-        
-        
+        if self.checkInSite():
+            if random.random() < self.config.p_change_direction:
+                angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+                self.move = self.move.rotate(angle_change)
+            self.move = self.move.normalize() * self.config.movement_speed
+            self.pos += self.move * self.config.delta_time
+        else:
+            self.state = 'wandering'
 
     def leavingProbability(self, in_proximity):
         '''
-        the more neighbours there are, the less chance of leaving
-
-        p_leave = p_base / N
-
+        https://hal.science/hal-02082903v1/file/Self_organised_Aggregation_in_Swarms_of_Robots_with_Informed_Robots.pdf
+        
+        p_leave = e^−bn;
         '''
-        neighbour_count = in_proximity
-        # Dividing the base probability by the neighbour count to get the inverse
-        p_leaving = self.config.p_base_leaving / (1 + neighbour_count)
-
-        return p_leaving
+        return math.exp(-self.config.b * (in_proximity + 1))
 
     def checkInSite(self):
-        intersections = list(self.obstacle_intersections())
-        return bool(intersections)
+        '''
+        Method for checking whether an agent is on the site
+        because the provided on_site() does not work for me
+        '''
+        site_id = self.on_site_id() # Maybe use later for data
+
+        sites = [
+        (250, 375, self.config.site_width, self.config.site_width),
+        (500, 375, 100, 100)]
+
+        for site in sites:
+            site_x, site_y, site_width, site_height = site
+            half_width, half_height = site_width / 2, site_height / 2
+            if (site_x - half_width <= self.pos.x <= site_x + half_width and
+                site_y - half_height <= self.pos.y <= site_y + half_height):
+                return True
+        return False
 
     def update(self):
-
-        if self.state == 'wandering':           # Agent performs the walking/wandering behavior
+        if self.state == 'wandering':
             self.wandering()
-        elif self.state == 'joining':           # Agent performs the joining behavior
+            if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
+                if self.checkInSite() and random.random() < self.joiningProbability(self.in_proximity_performance().count()):
+                    self.state = 'joining'
+                    self.timer = 0
+                    self.t_join = self.config.t_join_base + abs(random.gauss(0, self.config.t_join_noise))
+        elif self.state == 'joining':
             self.joining()
-            self.wandering()
-        elif self.state == 'still':             # Agent performs the still behavior
-            self.still()
-        elif self.state == 'leaving':           # Agent performs the leaving behaviour
+        elif self.state == 'still':
+            if not self.checkInSite():
+                print(f"Agent left the site while still, changing state to 'wandering'. Agent position: {self.pos}")
+                self.state = 'wandering'
+            else:
+                self.still()
+        elif self.state == 'leaving':
             self.leaving()
-            # Checks if the agent has crossed the site boundary
-            if self.checkInSite():              
-                self.state = 'wandering'   
-
         return super().update()
-    
-
-
-
 
 class AggregationSimulation(Simulation):
     config: AggregationConfig
     init_pos: Vector2 = Vector2(0, 0)
-
     global_delta_time: int = 0
+
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.site_image_path = "Assignment_0/images/bubble-full.png"
+        self.site_image_resized_path = "Assignment_0/images/bubble-full-resized.png"
+        self.resize_image(self.site_image_path, self.site_image_resized_path, (100, 100))  # Resize to (width, height)
+        self.site_width, self.site_height = self.get_image_dimensions(self.site_image_resized_path)
+        self.config.site_width = self.site_width
+        self.config.site_height = self.site_height
+        print(f"Site dimensions: width={self.site_width}, height={self.site_height}")
+
+    def resize_image(self, image_path, output_path, size):
+        with Image.open(image_path) as img:
+            resized_img = img.resize(size, Image.ANTIALIAS)
+            resized_img.save(output_path)
+
+    def get_image_dimensions(self, image_path):
+        with Image.open(image_path) as img:
+            return img.size  # Returns (width, height)
+        
 
     def before_update(self):
         super().before_update()
-
         AggregationSimulation.global_delta_time += 1
-        
-        #temporarily testing the joining -> still functionality by pressing 'M'   
         for event in pg.event.get():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_m:
                     for agent in self._agents:
                         agent.state = "joining"
 
-
-
 (
     AggregationSimulation(
         AggregationConfig(
-            duration=10_000, 
+            #duration=10_000,
             fps_limit=0,
             seed=1,
-            movement_speed= 1,
+            movement_speed=1,
             radius=75
         )
     )
     .batch_spawn_agents(50, Particle, images=["Assignment_0/images/green.png"])
-    .spawn_obstacle("Assignment_0/images/bubble-full.png",x=375, y=375)
+    .spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375)
+    .spawn_site("Assignment_0/images/bubble-full-resized.png", x=500, y=375)
     .run()
 )
