@@ -7,6 +7,9 @@ from PIL import Image
 import polars as pl
 import seaborn as sns
 import matplotlib.pyplot as plt
+import sys
+from datetime import timedelta
+import datetime
 
 
 class AggregationConfig(Config):
@@ -15,15 +18,17 @@ class AggregationConfig(Config):
     movement_speed: float = 1                       # Velocity of the Agents
     max_angle_change: float = 30.0                  # The maximum angle the Agent can change direction to
     p_change_direction: float = 0.1                 # The probability of changing direction
-    t_join_base: float = 50.0                       # The base time steps before stopping
-    t_join_noise: float = 5.0                       # The gaussian noise added to the base time steps
+    t_join_base: float = 50                       # The base time steps before stopping
+    t_join_noise: float = 5                       # The gaussian noise added to the base time steps
     p_base_leaving: float = 0.1                     # Old
     p_base_joining: float = 0.5                     # Old
     a: float = 0.6                                  # New value for joining probability
     b: float = 2.1                                  # New value for leaving probability
     time_step_d: int = 40                           # Number of time steps 'd' for sampling join/leave probability
     site_width: int = 0                             
-    site_height: int = 0                
+    site_height: int = 0 
+    
+                   
 
 class Cockroach(Agent):
     config: AggregationConfig
@@ -37,6 +42,7 @@ class Cockroach(Agent):
         # Initialise the state of the agent to be wandering
         self.state = 'wandering'
         self.timer = 0
+        
 
     def change_position(self):
         self.there_is_no_escape()
@@ -152,6 +158,9 @@ class Cockroach(Agent):
         return False
 
     def update(self):
+
+
+
         if self.state == 'wandering':
             self.wandering()
             if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
@@ -170,11 +179,22 @@ class Cockroach(Agent):
         elif self.state == 'leaving':
             self.leaving()
 
-
+        # start timer when program starts
+        #then when all cockroahces in same site, quit
+        # save time.
                 # Save additional data
-        in_proximity = self.in_proximity_accuracy().count()
-        self.save_data("in_proximity", in_proximity)
-        self.save_data("state", self.state)
+        #in_proximity = self.in_proximity_accuracy().count()
+
+
+        
+
+        #print(count)
+        #print(elapsed_time)
+
+
+
+        #self.save_data("in_proximity", in_proximity)
+        #self.save_data("state", self.state)
 
 
         return super().update()
@@ -183,6 +203,8 @@ class AggregationSimulation(Simulation):
     config: AggregationConfig
     init_pos: Vector2 = Vector2(0, 0)
     global_delta_time: int = 0
+    global_count: int = 0
+    
 
 
     def __init__(self, config):
@@ -194,6 +216,7 @@ class AggregationSimulation(Simulation):
         self.config.site_width = self.site_width
         self.config.site_height = self.site_height
         print(f"Site dimensions: width={self.site_width}, height={self.site_height}")
+        self.simulation_start_time = None
 
     def resize_image(self, image_path, output_path, size):
         with Image.open(image_path) as img:
@@ -207,12 +230,31 @@ class AggregationSimulation(Simulation):
 
     def before_update(self):
         super().before_update()
+        if self.simulation_start_time is None:
+            self.simulation_start_time = datetime.datetime.now()
+        
         AggregationSimulation.global_delta_time += 1
         for event in pg.event.get():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_m:
                     for agent in self._agents:
                         agent.state = "joining"
+        
+        
+        self.global_count = 0
+        for cockroach in self._agents:
+            if cockroach.state == 'still':
+                self.global_count += 1
+                print(self.global_count)
+
+        elapsed_time = datetime.datetime.now() - self.simulation_start_time
+        
+        if self.global_count == 10:
+            print(elapsed_time)
+            pg.quit()
+            sys.exit()
+
+
 
 df = (
 (
@@ -244,14 +286,14 @@ df = (
 )
 )
 
-print(df)
+# print(df)
 
-df_pandas = df.to_pandas()
+# df_pandas = df.to_pandas()
 
 
-# Plot average proximity over time
-sns.lineplot(data=df_pandas, x='frame', y='avg_in_proximity')
-plt.title("Average Proximity of Agents Over Time")
-plt.xlabel("Frame")
-plt.ylabel("Average Proximity")
-plt.show()
+# # Plot average proximity over time
+# sns.lineplot(data=df_pandas, x='frame', y='avg_in_proximity')
+# plt.title("Average Proximity of Agents Over Time")
+# plt.xlabel("Frame")
+# plt.ylabel("Average Proximity")
+# plt.show()
