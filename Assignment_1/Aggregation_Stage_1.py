@@ -6,6 +6,7 @@ import math
 from PIL import Image
 import polars as pl
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 class AggregationConfig(Config):
@@ -245,5 +246,12 @@ df = (
 
 print(df)
 
-plot = sns.relplot(x=df["frame"], y=df["agents"], hue=df["image_index"])
-plot.savefig("agents.png", dpi=300)
+df_pandas = df.to_pandas()
+
+
+# Plot average proximity over time
+sns.lineplot(data=df_pandas, x='frame', y='avg_in_proximity')
+plt.title("Average Proximity of Agents Over Time")
+plt.xlabel("Frame")
+plt.ylabel("Average Proximity")
+plt.show()
