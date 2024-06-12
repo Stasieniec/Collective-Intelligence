@@ -24,7 +24,7 @@ class AggregationConfig(Config):
     site_width: int = 0                             
     site_height: int = 0                
 
-class Particle(Agent):
+class Cockroach(Agent):
     config: AggregationConfig
 
     def __init__(self, images, simulation, pos=None, move=None):
@@ -168,6 +168,14 @@ class Particle(Agent):
                 self.still()
         elif self.state == 'leaving':
             self.leaving()
+
+
+                # Save additional data
+        in_proximity = self.in_proximity_accuracy().count()
+        self.save_data("in_proximity", in_proximity)
+        self.save_data("state", self.state)
+
+
         return super().update()
 
 class AggregationSimulation(Simulation):
@@ -216,14 +224,21 @@ df = (
             radius=50
         )
     )
-    .batch_spawn_agents(50, Particle, images=["Assignment_0/images/green.png"])
+    .batch_spawn_agents(50, Cockroach, images=["Assignment_0/images/green.png"])
     .spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375)
     .spawn_site("Assignment_0/images/bubble-full-resized.png", x=500, y=375)
     .run()
+    
+    
+    
     .snapshots 
-    .group_by(["frame","image_index"])
-    .agg(pl.count("id").alias("agents"))
-    .sort(["frame", "image_index"])
+    .group_by(["frame","id"])
+    .agg([
+        pl.count("id").alias("agents"),
+        pl.mean("in_proximity").alias("avg_in_proximity"),
+        pl.first("state").alias("state")
+    ])
+    .sort(["frame", "id"])
 
 )
 )
