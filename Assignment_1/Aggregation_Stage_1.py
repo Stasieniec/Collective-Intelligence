@@ -216,7 +216,7 @@ df = (
             radius=50
         )
     )
-    .batch_spawn_agents(50, Particle, images=["Assignment_0/images/green.png"])
+    .batch_spawn_agents(50, Particle, images=["Assignment_0/images/roach40.png"])
     .spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375)
     .spawn_site("Assignment_0/images/bubble-full-resized.png", x=500, y=375)
     .run()
