@@ -37,9 +37,12 @@ class AggregationConfig(Config):
     t_join_noise: float = 5                       # The gaussian noise added to the base time steps
     p_base_leaving: float = 0.1                     # Old
     p_base_joining: float = 0.5                     # Old
+
+    p_random_stop: float = 0.01
     a: float = 0.6                                  # New value for joining probability
     b: float = 2.1                                  # New value for leaving probability
     time_step_d: int = 40                           # Number of time steps 'd' for sampling join/leave probability
+    time_step_f: int = 20
     site_width: int = 0                             
     site_height: int = 0 
     
@@ -83,6 +86,21 @@ class Cockroach(Agent):
         while checking if the next step is an obstacle
         
         '''
+        self.timer_w = 0
+        rand = random.random()
+        if rand < self.config.p_random_stop:
+            print("random number",random.random())
+            print("p random stop",self.config.p_random_stop)
+            #self.freeze_movement()
+            #print("freezing")
+            if self.timer_w > 5000000:
+                self.continue_movement()
+                print("continue")
+            else:
+                self.timer_w += self.config.delta_time
+                
+            
+
         if random.random() < self.config.p_change_direction:
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
@@ -158,23 +176,24 @@ class Cockroach(Agent):
         Method for checking whether an agent is on the site
         because the provided on_site() does not work for me
         '''
-        site_id = self.on_site_id() # Maybe use later for data
+        # site_id = self.on_site_id() # Maybe use later for data
 
-        sites = [
-        (250, 375, self.config.site_width, self.config.site_width),
-        (500, 375, 100, 100)]
+        # sites = [
+        # (250, 375, self.config.site_width, self.config.site_width),
+        # (500, 375, 100, 100)]
 
-        for site in sites:
-            site_x, site_y, site_width, site_height = site
-            half_width, half_height = site_width / 2, site_height / 2
-            if (site_x - half_width <= self.pos.x <= site_x + half_width and
-                site_y - half_height <= self.pos.y <= site_y + half_height):
-                return True
+        # for site in sites:
+        #     site_x, site_y, site_width, site_height = site
+        #     half_width, half_height = site_width / 2, site_height / 2
+        #     if (site_x - half_width <= self.pos.x <= site_x + half_width and
+        #         site_y - half_height <= self.pos.y <= site_y + half_height):
+        #         return True
         return False
+    
+    def temporary_stop(self):
+        self.freeze_movement
 
-    def update(self):
-
-
+    def update(self):      
 
         if self.state == 'wandering':
             self.wandering()
@@ -238,9 +257,9 @@ class AggregationSimulation(Simulation):
             resized_img = img.resize(size, Image.ANTIALIAS)
             resized_img.save(output_path)
 
-    with Image.open('Assignment_0/images/roach40.png') as img:
-        rotated_img = img.rotate(90, expand=True)
-        rotated_img.save('Assignment_0/images/roach40.png')
+    # with Image.open('Assignment_0/images/roach40.png') as img:
+    #     rotated_img = img.rotate(90, expand=True)
+    #     rotated_img.save('Assignment_0/images/roach40.png')
 
     def get_image_dimensions(self, image_path):
         with Image.open(image_path) as img:
@@ -288,8 +307,6 @@ df = (
         )
     )
     .batch_spawn_agents(50, Cockroach, images=["Assignment_0/images/roach40.png"])
-    .spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375)
-    .spawn_site("Assignment_0/images/bubble-full.png", x=500, y=375)
     .run()
     
     
