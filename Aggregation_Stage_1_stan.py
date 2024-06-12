@@ -7,6 +7,8 @@ from PIL import Image
 import polars as pl
 import seaborn as sns
 import matplotlib.pyplot as plt
+import datetime
+import sys
 
 
 class AggregationConfig(Config):
@@ -194,6 +196,7 @@ class AggregationSimulation(Simulation):
         self.config.site_width = self.site_width
         self.config.site_height = self.site_height
         print(f"Site dimensions: width={self.site_width}, height={self.site_height}")
+        self.simulation_start_time = None
 
     def resize_image(self, image_path, output_path, size):
         with Image.open(image_path) as img:
@@ -207,16 +210,33 @@ class AggregationSimulation(Simulation):
 
     def before_update(self):
         super().before_update()
+        if self.simulation_start_time is None:
+            self.simulation_start_time = datetime.datetime.now()
+        
         AggregationSimulation.global_delta_time += 1
         for event in pg.event.get():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_m:
                     for agent in self._agents:
                         agent.state = "joining"
+        
+        
+        self.global_count = 0
+        for cockroach in self._agents:
+            if cockroach.state == 'still':
+                self.global_count += 1
+                print(self.global_count)
+
+        elapsed_time = datetime.datetime.now() - self.simulation_start_time
+        
+        if self.global_count == 10:
+            print(elapsed_time)
+            pg.quit()
+            sys.exit()
 
 
-
-AggregationSimulation(
+def run_simulation(number_of_roaches):
+    AggregationSimulation(
         AggregationConfig(
             #duration=10_000,
             fps_limit=0,
@@ -224,4 +244,4 @@ AggregationSimulation(
             movement_speed=1,
             radius=50
         )
-    ).batch_spawn_agents(50, Cockroach, images=["Assignment_0/images/roach40.png"]).spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375).spawn_site("Assignment_0/images/bubble-full-resized.png", x=500, y=375).run()
+    ).batch_spawn_agents(number_of_roaches, Cockroach, images=["Assignment_0/images/roach40.png"]).spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375).spawn_site("Assignment_0/images/bubble-full-resized.png", x=500, y=375).run()
