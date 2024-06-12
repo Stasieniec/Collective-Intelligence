@@ -38,7 +38,7 @@ class AggregationConfig(Config):
     p_base_leaving: float = 0.1                     # Old
     p_base_joining: float = 0.5                     # Old
 
-    p_random_stop: float = 0.01
+    p_random_stop: float = 0.0001
     a: float = 0.6                                  # New value for joining probability
     b: float = 2.1                                  # New value for leaving probability
     time_step_d: int = 40                           # Number of time steps 'd' for sampling join/leave probability
@@ -89,15 +89,15 @@ class Cockroach(Agent):
         self.timer_w = 0
         rand = random.random()
         if rand < self.config.p_random_stop:
-            print("random number",random.random())
+            print("random number",rand)
             print("p random stop",self.config.p_random_stop)
-            #self.freeze_movement()
-            #print("freezing")
-            if self.timer_w > 5000000:
-                self.continue_movement()
-                print("continue")
-            else:
-                self.timer_w += self.config.delta_time
+            self.freeze_movement()
+            print("freezing")
+            # if self.timer_w > 5000000:
+            #     self.continue_movement()
+            #     print("continue")
+            # else:
+            #     self.timer_w += self.config.delta_time
                 
             
 
