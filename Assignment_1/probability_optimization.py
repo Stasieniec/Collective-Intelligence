@@ -11,7 +11,7 @@ def P_leave(n, b):
 
 # Generate data
 n_values = np.array([0, 1, 2, 3])
-P_join_values = P_join(n_values, 0.6)  # Use initial guess for 'a'
+P_join_values = P_join(n_values, 1.5)  # Use initial guess for 'a'
 P_leave_values = P_leave(n_values, 0.5)  # Use initial guess for 'b'
 
 # Plot the data

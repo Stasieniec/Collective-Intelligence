@@ -38,15 +38,18 @@ class AggregationConfig(Config):
     p_base_leaving: float = 0.1                     # Old
     p_base_joining: float = 0.5                     # Old
 
-    p_random_stop: float = 0.0001
-    a: float = 0.6                                  # New value for joining probability
-    b: float = 2.1                                  # New value for leaving probability
+    p_random_stop: float = 0.001
+    a: float = 0.6                                  # New value for joining probability 0.6
+    b: float = 2.1                                  # New value for leaving probability 2.1
     time_step_d: int = 40                           # Number of time steps 'd' for sampling join/leave probability
     time_step_f: int = 20
     site_width: int = 0                             
     site_height: int = 0 
     
-                   
+    stopping_duration: float = 75.0
+    small_aggregation_threshold: int = 5
+
+           
 
 class Cockroach(Agent):
     config: AggregationConfig
@@ -60,6 +63,8 @@ class Cockroach(Agent):
         # Initialise the state of the agent to be wandering
         self.state = 'wandering'
         self.timer = 0
+        self.stop_timer = 0
+        self.current_site_size = 0
         
 
     def change_position(self):
@@ -86,19 +91,6 @@ class Cockroach(Agent):
         while checking if the next step is an obstacle
         
         '''
-        self.timer_w = 0
-        rand = random.random()
-        if rand < self.config.p_random_stop:
-            print("random number",rand)
-            print("p random stop",self.config.p_random_stop)
-            self.freeze_movement()
-            print("freezing")
-            # if self.timer_w > 5000000:
-            #     self.continue_movement()
-            #     print("continue")
-            # else:
-            #     self.timer_w += self.config.delta_time
-                
             
 
         if random.random() < self.config.p_change_direction:
@@ -118,8 +110,11 @@ class Cockroach(Agent):
         if self.timer > self.t_join:
             self.state = 'still'
             print("State changed to still")
+            self.current_site_size = self.in_proximity_performance().count()
         else:
             self.timer += self.config.delta_time
+            #self.simulation.pheromones.append(Pheromone(self.pos.copy(), self.config.pheromone_intensity, self.config.pheromone_decay))
+
 
     def joiningProbability(self, in_proximity):
         '''
@@ -127,8 +122,12 @@ class Cockroach(Agent):
         Pstay = 0.03 + 0.48 ∗ (1 − e ^−an);
         
         '''
-        p_stay = 0.03 + 0.48 * (1 - math.exp(-self.config.a * (in_proximity + 1)))
-        return p_stay
+        if in_proximity > self.current_site_size:
+        # Only join if the new site is larger than the current site
+            return 0.03 + 0.48 * (1 - math.exp(-self.config.a * (in_proximity + 1)))
+        else:
+        # Do not join if the new site is smaller or equal in size
+            return 0
 
     def still(self):
 
@@ -136,16 +135,17 @@ class Cockroach(Agent):
         Method for freezing the movement of the agent, if in the site
 
         '''
-        if not self.checkInSite():
-            print(f"Agent left the site, changing state to 'wandering'. Agent position: {self.pos}")
-            self.state = 'wandering'
-            return
+        # if not self.checkInSite():
+        #     print(f"Agent left the site, changing state to 'wandering'. Agent position: {self.pos}")
+        #     self.state = 'wandering'
+        #     return
 
         self.freeze_movement()
         #print("freezing")
 
         rand = random.random()
         in_proximity = self.in_proximity_performance().count()
+        self.current_site_size = in_proximity
 
         # Every d time steps, try to leave the site
         if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
@@ -169,7 +169,15 @@ class Cockroach(Agent):
         
         p_leave = e^−bn;
         '''
-        return math.exp(-self.config.b * (in_proximity + 1))
+        #density_factor = in_proximity / 10
+
+        if in_proximity <= self.config.small_aggregation_threshold:
+        # Increase the probability of leaving for smaller aggregations
+            return 1.0 - math.exp(-self.config.b * (in_proximity + 1))
+        else:
+        # Normal leaving probability for larger aggregations
+            return math.exp(-self.config.b * (in_proximity + 1))
+
 
     def checkInSite(self):
         '''
@@ -189,13 +197,32 @@ class Cockroach(Agent):
         #         site_y - half_height <= self.pos.y <= site_y + half_height):
         #         return True
         return False
-    
+
+
+
     def temporary_stop(self):
         self.freeze_movement
 
-    def update(self):      
+    def social_interaction(self):
+        in_proximity = self.in_proximity_performance().count()
+        if in_proximity > 3:
+            if self.state == 'wandering' and random.random() < self.joiningProbability(in_proximity):
+                self.t_join = self.config.t_join_base + abs(random.gauss(0, self.config.t_join_noise))
+                self.state = 'joining'
+                self.timer = 0
+            elif self.state == 'still' and random.random() < self.leavingProbability(in_proximity):
+                self.state = 'leaving'
+                self.continue_movement()
 
+    def update(self):      
+        self.social_interaction()
         if self.state == 'wandering':
+            if random.random() < self.config.p_random_stop:
+                self.state = 'stopping'
+                self.stop_timer = 0  # Reset the stop timer
+                self.freeze_movement()
+                #print("random stop, freezing")
+                return
             self.wandering()
             if AggregationSimulation.global_delta_time % self.config.time_step_d == 0:
                 if self.checkInSite() and random.random() < self.joiningProbability(self.in_proximity_performance().count()):
@@ -205,13 +232,15 @@ class Cockroach(Agent):
         elif self.state == 'joining':
             self.joining()
         elif self.state == 'still':
-            if not self.checkInSite():
-                print(f"Agent left the site while still, changing state to 'wandering'. Agent position: {self.pos}")
-                self.state = 'wandering'
-            else:
-                self.still()
+            self.still()
         elif self.state == 'leaving':
             self.leaving()
+        elif self.state == 'stopping':
+            self.stop_timer += self.config.delta_time
+            if self.stop_timer >= self.config.stopping_duration:
+                self.state = 'wandering'
+                self.continue_movement()
+                #print("resume wandering")
 
         # start timer when program starts
         #then when all cockroahces in same site, quit
@@ -233,12 +262,21 @@ class Cockroach(Agent):
 
         return super().update()
 
+class Pheromone(Agent):
+    def __init__(self, pos: Vector2, images: pg.Surface, simulation: Simulation, *args, **kwargs):
+        super().__init__([images], simulation, *args, **kwargs)
+        self.pos = pos
+
+    def change_position(self):
+        pass
+
+
 class AggregationSimulation(Simulation):
     config: AggregationConfig
     init_pos: Vector2 = Vector2(0, 0)
     global_delta_time: int = 0
     global_count: int = 0
-    
+    #green_image = pg.image.load("Assignment_0/images/green.png")
 
 
     def __init__(self, config):
@@ -251,6 +289,16 @@ class AggregationSimulation(Simulation):
         self.config.site_height = self.site_height
         print(f"Site dimensions: width={self.site_width}, height={self.site_height}")
         self.simulation_start_time = None
+        #self.config.total_agents = len(self._agents)  # Pass total number of agents
+        #self.config.calculate_small_aggregation_threshold()
+
+        
+
+    def spawn_pheromone(self, position: Vector2):
+        cube_image = "Assignment_0/images/green.png"
+        cube_image = pg.image.load(cube_image).convert_alpha()
+        cube = Pheromone(pos=position, images=cube_image, simulation=self)
+        self._agents.add(cube)
 
     def resize_image(self, image_path, output_path, size):
         with Image.open(image_path) as img:
@@ -278,7 +326,11 @@ class AggregationSimulation(Simulation):
                     for agent in self._agents:
                         agent.state = "joining"
         
-        
+        # for cockroach in self._agents:
+        #     if cockroach.state == 'joining':
+        #         self.spawn_pheromone(cockroach.pos.copy())
+        #         return
+
         self.global_count = 0
         for cockroach in self._agents:
             if cockroach.state == 'still':
@@ -287,50 +339,23 @@ class AggregationSimulation(Simulation):
 
         elapsed_time = datetime.datetime.now() - self.simulation_start_time
         
-        if self.global_count == 30:
-            #print(elapsed_time)
+        if self.global_count == 100:
+            print(elapsed_time)
             pg.quit()
             sys.exit()
 
 
 
-df = (
-(
+def run_simulation(number_of_roaches):
     AggregationSimulation(
         AggregationConfig(
             #duration=10_000,
-            fps_limit=0,
-            seed=1,
+            fps_limit=120,
+            seed=2,
             movement_speed=1,
             radius=50,
             image_rotation=True,
         )
-    )
-    .batch_spawn_agents(50, Cockroach, images=["Assignment_0/images/roach40.png"])
-    .run()
+    ).batch_spawn_agents(number_of_roaches, Cockroach, images=["Assignment_0/images/roach40.png"]).run()
     
-    
-    
-    .snapshots 
-    .group_by(["frame","id"])
-    .agg([
-        pl.count("id").alias("agents"),
-        pl.mean("in_proximity").alias("avg_in_proximity"),
-        pl.first("state").alias("state")
-    ])
-    .sort(["frame", "id"])
-
-)
-)
-
-# print(df)
-
-# df_pandas = df.to_pandas()
-
-
-# # Plot average proximity over time
-# sns.lineplot(data=df_pandas, x='frame', y='avg_in_proximity')
-# plt.title("Average Proximity of Agents Over Time")
-# plt.xlabel("Frame")
-# plt.ylabel("Average Proximity")
-# plt.show()
+run_simulation(100)    
