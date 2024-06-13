@@ -263,8 +263,8 @@ class Cockroach(Agent):
         return super().update()
 
 class Pheromone(Agent):
-    def __init__(self, pos: Vector2, images: pg.Surface, simulation: Simulation, *args, **kwargs):
-        super().__init__([images], simulation, *args, **kwargs)
+    def _init_(self, pos: Vector2, images: pg.Surface, simulation: Simulation, *args, **kwargs):
+        super()._init_([images], simulation, *args, **kwargs)
         self.pos = pos
 
     def change_position(self):
@@ -351,11 +351,11 @@ def run_simulation(number_of_roaches):
         AggregationConfig(
             #duration=10_000,
             fps_limit=120,
-            seed=2,
+            seed=1,
             movement_speed=1,
             radius=50,
             image_rotation=True,
         )
     ).batch_spawn_agents(number_of_roaches, Cockroach, images=["Assignment_0/images/roach40.png"]).run()
     
-run_simulation(100)    
+run_simulation(100)
