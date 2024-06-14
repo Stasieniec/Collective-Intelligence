@@ -287,7 +287,7 @@ df = (
             image_rotation=True,
         )
     )
-    .batch_spawn_agents(50, Cockroach, images=["Assignment_0/images/roach40.png"])
+    .batch_spawn_agents(20, Cockroach, images=["Assignment_0/images/roach40.png"])
     .spawn_site("Assignment_0/images/bubble-full.png", x=250, y=375)
     .spawn_site("Assignment_0/images/bubble-full.png", x=500, y=375)
     .run()
