@@ -105,8 +105,12 @@ class Foxes(Agent):
                     print(f"Fox ID {self.id} ate: +5HP, health:{self.health}")
                     agent.eaten()
                     agent.death()
-                    self.reproduce()
+                    self.reproduction()
                 
+    def reproduction(self):
+        self.reproduce()
+        return
+
 
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
@@ -154,6 +158,10 @@ class Foxes(Agent):
 class Rabbits(Agent):
     config: CompetitionConfig
     animation_frames: int = 8
+    p_reproduction: float = 0.05
+
+    time_step_d: int = 100
+
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
@@ -167,6 +175,8 @@ class Rabbits(Agent):
         self.health = 1
 
         self.frame = 0
+
+        
 
     def animation(self, current_pos, next_pos):
 
@@ -210,7 +220,7 @@ class Rabbits(Agent):
 
     def update(self):
         self.wandering()
-        #self.animation()
+        self.reproduction()
 
     def eaten(self):
         self.health = 0
@@ -222,6 +232,12 @@ class Rabbits(Agent):
             self.kill()
             return
 
+    def reproduction(self):
+
+        if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
+            if random.random() < self.p_reproduction:
+                self.reproduce()
+            return
 
     def wandering(self):
         '''
