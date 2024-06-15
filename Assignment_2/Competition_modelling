@@ -23,6 +23,16 @@ import datetime
 
 '''
 
+'''
+Dying method:
+    have a timer, when timer runs out fox dies
+    if fox eats rabit, they add base time + gaussian noise to the timer
+
+
+    or have a health variable, every D time steps, there is a probability that they lose 1 health
+    if fox eats a rabbit, they gain some health back.
+'''
+
 
 class CompetitionConfig(Config):
     delta_time: float = 0.5                         # Value for time steps
@@ -34,6 +44,8 @@ class CompetitionConfig(Config):
 
     p_change_direction: float = 0.05
 
+    time_step_d: int = 100
+
 class Foxes(Agent):
     config: CompetitionConfig
 
@@ -44,12 +56,22 @@ class Foxes(Agent):
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
         self.state = 'wandering'
+        self.health = 100
 
     def change_position(self):
         self.there_is_no_escape()
 
     def update(self):
+        if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
+            self.health -= 1
         self.wandering()
+        self.death()
+
+    def death(self):
+        if self.health == 0:
+            print("Fox died of starvation, health 0")
+            self.kill()
+            return
 
     def wandering(self):
         '''
@@ -133,9 +155,12 @@ class Rabbits(Agent):
 
 
 class CompetitionSimulation(Simulation):
+    
+    config: CompetitionConfig
+    global_delta_time: int = 0
+
     def before_update(self):
         super().before_update()
-    config: CompetitionConfig
 
 
 def run_simulation(n_rabbits, n_foxes):
