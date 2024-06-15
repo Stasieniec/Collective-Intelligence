@@ -28,6 +28,10 @@ class CompetitionConfig(Config):
     delta_time: float = 0.5                         # Value for time steps
     mass: int = 20
 
+    movement_speed: float = 1                       # Velocity of the Agents
+    max_angle_change: float = 30.0 
+
+    p_change_direction: float = 0.1
 
 class Foxes(Agent):
     config: CompetitionConfig
@@ -35,15 +39,81 @@ class Foxes(Agent):
     def change_position(self):
         self.there_is_no_escape()
 
+    def update(self):
+        self.wandering()
 
-    pass
+    def wandering(self):
+        '''
+        Elicits a random walking behaviour of the Agent
+        by picking a random angle +- 30 degrees,
+        while checking if the next step is an obstacle
+        
+        '''
+
+        if random.random() < self.config.p_change_direction:
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            self.move = self.move.rotate(angle_change)
+        
+        self.move = self.move.normalize() * self.config.movement_speed
+        next_step = self.pos + self.move * self.config.delta_time
+        self.obstacle_avoidance(next_step)
+        self.pos += self.move * self.config.delta_time
+    
+
+    def obstacle_avoidance(self, next_step):
+        '''
+        Checks whether the next step is colliding with an obstacle
+        '''
+        while self.is_obstacle(next_step):
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            self.move = self.move.rotate(angle_change)
+            next_step = self.pos + self.move * self.config.delta_time
+
+    def is_obstacle(self, position):
+        if position.x < 0 or position.x >= 750 or position.y < 0 or position.y >= 750:
+            return True
+        return False
+    
 
 class Rabbits(Agent):
     config: CompetitionConfig
 
     def change_position(self):
         self.there_is_no_escape()
-    pass
+
+    def update(self):
+        self.wandering()
+
+    def wandering(self):
+        '''
+        Elicits a random walking behaviour of the Agent
+        by picking a random angle +- 30 degrees,
+        while checking if the next step is an obstacle
+        
+        '''
+
+        if random.random() < self.config.p_change_direction:
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            self.move = self.move.rotate(angle_change)
+        
+        self.move = self.move.normalize() * self.config.movement_speed
+        next_step = self.pos + self.move * self.config.delta_time
+        self.obstacle_avoidance(next_step)
+        self.pos += self.move * self.config.delta_time
+
+    def obstacle_avoidance(self, next_step):
+        '''
+        Checks whether the next step is colliding with an obstacle
+        '''
+        while self.is_obstacle(next_step):
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            self.move = self.move.rotate(angle_change)
+            next_step = self.pos + self.move * self.config.delta_time
+
+    def is_obstacle(self, position):
+        if position.x < 0 or position.x >= 750 or position.y < 0 or position.y >= 750:
+            return True
+        return False
 
 
 class CompetitionSimulation(Simulation):
