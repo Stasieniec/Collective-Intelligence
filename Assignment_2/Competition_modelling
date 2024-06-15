@@ -1,0 +1,12 @@
+'''
+---+++ TO DO +++---
+
+-- Empty environment based on Lotka-Volterra model:
+    Population of Foxes
+        Foxes reproduce if it eats a rabbit.
+        Certain probability of dying if they don't eat
+    Population of Rabbits
+        Certain probability of spontaneous asexual reproduction
+        Dies if eaten
+
+'''
