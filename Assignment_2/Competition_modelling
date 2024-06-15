@@ -1,3 +1,15 @@
+from vi import Agent, Simulation, Config
+from pygame.math import Vector2
+import random
+import pygame as pg
+import math
+from PIL import Image
+import polars as pl
+import seaborn as sns
+import matplotlib.pyplot as plt
+import sys
+from datetime import timedelta
+import datetime
 '''
 ---+++ TO DO +++---
 
@@ -10,3 +22,46 @@
         Dies if eaten
 
 '''
+
+
+class CompetitionConfig(Config):
+    delta_time: float = 0.5                         # Value for time steps
+    mass: int = 20
+
+
+class Foxes(Agent):
+    config: CompetitionConfig
+
+    def change_position(self):
+        self.there_is_no_escape()
+
+
+    pass
+
+class Rabbits(Agent):
+    config: CompetitionConfig
+
+    def change_position(self):
+        self.there_is_no_escape()
+    pass
+
+
+class CompetitionSimulation(Simulation):
+    def before_update(self):
+        super().before_update()
+    config: CompetitionConfig
+
+
+def run_simulation(n_rabbits, n_foxes):
+    CompetitionSimulation(
+        CompetitionConfig(
+            #duration=10_000,
+            fps_limit=120,
+            seed=1,
+            movement_speed=1,
+            radius=50,
+            image_rotation=True,
+        )
+    ).batch_spawn_agents(n_rabbits, Rabbits, images=["Assignment_0/images/bird.png"]).batch_spawn_agents(n_foxes, Foxes, images=["Assignment_0/images/triangle@50px.png"]).run()
+    
+run_simulation(20,3)

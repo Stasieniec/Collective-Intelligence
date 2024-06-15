@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import sys
 from datetime import timedelta
 import datetime
-
 '''
 
 To Do:
