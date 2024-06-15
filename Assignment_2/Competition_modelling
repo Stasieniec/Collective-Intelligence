@@ -62,10 +62,37 @@ class Foxes(Agent):
         self.there_is_no_escape()
 
     def update(self):
-        if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
-            self.health -= 1
+        
+        self.lose_health()
         self.wandering()
         self.death()
+        self.eat()
+
+    def predator(self):
+        pass
+
+    def eat(self):
+        in_proximity = self.in_proximity_accuracy()
+        for agent, dist in in_proximity:
+            if isinstance(agent, Rabbits):
+            #print(agent)
+            #if agent.isinstance() == Rabbits:
+
+                if dist < 10:
+                    self.health += 5
+                    print("health +5")
+                    agent.eaten()
+                    agent.death()
+                
+
+
+    def reproduction(self):
+        pass
+
+    def lose_health(self):
+        if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
+            self.health -= 1
+            return
 
     def death(self):
         if self.health == 0:
@@ -116,11 +143,24 @@ class Rabbits(Agent):
 
         self.state = 'wandering'
 
+        self.health = 1
+
     def change_position(self):
         self.there_is_no_escape()
 
     def update(self):
         self.wandering()
+
+    def eaten(self):
+        self.health = 0
+        return
+
+    def death(self):
+        if self.health == 0:
+            print("Rabbit died by fox, health 0")
+            self.kill()
+            return
+
 
     def wandering(self):
         '''
@@ -160,6 +200,7 @@ class CompetitionSimulation(Simulation):
     global_delta_time: int = 0
 
     def before_update(self):
+        CompetitionSimulation.global_delta_time += 1
         super().before_update()
 
 
