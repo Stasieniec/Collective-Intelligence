@@ -82,6 +82,7 @@ class Particle(Agent):
         '''
         https://research.vu.nl/ws/portalfiles/portal/233064455/On_self_organised_aggregation_dynamics_in_swarms_of_robots_with_informed_robots.pdf
         https://hal.science/hal-02082903v1/file/Self_organised_Aggregation_in_Swarms_of_Robots_with_Informed_Robots.pdf
+        
         Pstay = 0.03 + 0.48 ∗ (1 − e ^−an);
         
         '''

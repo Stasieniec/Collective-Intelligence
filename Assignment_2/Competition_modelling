@@ -24,7 +24,17 @@ import datetime
 '''
 
 '''
+
+Animation brainstorm:
+    try to get the direction of the agent so either up down left or right
+    then change image depending on direction
+
+'''
+
+
+'''
 ---+++---+++ Cool things to add +++---+++---
+- - - Animation for the rabbits
 -+
 - - - Fox stears towards closest rabbit
 -+
@@ -135,6 +145,7 @@ class Foxes(Agent):
 
 class Rabbits(Agent):
     config: CompetitionConfig
+    animation_frames: int = 8
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
@@ -142,15 +153,56 @@ class Rabbits(Agent):
             angle = random.uniform(0, 360)
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
+
         self.state = 'wandering'
 
         self.health = 1
+
+        self.frame = 0
+
+    def animation(self, current_pos, next_pos):
+
+        dx = current_pos.x - next_pos.x
+        dy = current_pos.y - next_pos.y
+
+        # Determine the direction of movement
+
+        # Moving left
+        if dx < 0:
+            
+            start_frame = 0
+        
+        # Moving right
+        elif dx > 0:
+            
+            start_frame = 8
+
+        # Moving down
+        if dy < 0:
+            
+            start_frame = 8
+
+        # Moving up
+        elif dy > 0:
+            
+            start_frame = 24
+
+        # Every 8 time steps, update the frame 
+        if CompetitionSimulation.global_delta_time % 8 == 0:
+            self.change_image(start_frame + self.frame)
+            self.frame += 1
+
+        # Reset frame animation loop 
+        if self.frame == 8:
+            self.frame = 0
+
 
     def change_position(self):
         self.there_is_no_escape()
 
     def update(self):
         self.wandering()
+        #self.animation()
 
     def eaten(self):
         self.health = 0
@@ -178,6 +230,7 @@ class Rabbits(Agent):
         self.move = self.move.normalize() * self.config.movement_speed_r
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
+        self.animation(self.pos,next_step)
         self.pos += self.move * self.config.delta_time
 
     def obstacle_avoidance(self, next_step):
@@ -215,6 +268,41 @@ def run_simulation(n_rabbits, n_foxes):
             radius=50,
             image_rotation=True,
         )
-    ).batch_spawn_agents(n_rabbits, Rabbits, images=["Assignment_0/images/bird.png"]).batch_spawn_agents(n_foxes, Foxes, images=["Assignment_0/images/triangle@50px.png"]).run()
+
+            
+    ).batch_spawn_agents(n_rabbits, Rabbits, images=[
+    "Assignment_2/sprite_frames/sprite_l.png",
+    "Assignment_2/sprite_frames/sprite_l (1).png",
+    "Assignment_2/sprite_frames/sprite_l (2).png",
+    "Assignment_2/sprite_frames/sprite_l (3).png",
+    "Assignment_2/sprite_frames/sprite_l (4).png",
+    "Assignment_2/sprite_frames/sprite_l (5).png",
+    "Assignment_2/sprite_frames/sprite_l (6).png",
+    "Assignment_2/sprite_frames/sprite_l (7).png",
+    "Assignment_2/sprite_frames/sprite_r.png",
+    "Assignment_2/sprite_frames/sprite_r (1).png",
+    "Assignment_2/sprite_frames/sprite_r (2).png",
+    "Assignment_2/sprite_frames/sprite_r (3).png",
+    "Assignment_2/sprite_frames/sprite_r (4).png",
+    "Assignment_2/sprite_frames/sprite_r (5).png",
+    "Assignment_2/sprite_frames/sprite_r (6).png",
+    "Assignment_2/sprite_frames/sprite_r (7).png",
+    "Assignment_2/sprite_frames/sprite_f.png",
+    "Assignment_2/sprite_frames/sprite_f (1).png",
+    "Assignment_2/sprite_frames/sprite_f (2).png",
+    "Assignment_2/sprite_frames/sprite_f (3).png",
+    "Assignment_2/sprite_frames/sprite_f (4).png",
+    "Assignment_2/sprite_frames/sprite_f (5).png",
+    "Assignment_2/sprite_frames/sprite_f (6).png",
+    "Assignment_2/sprite_frames/sprite_f (7).png",
+    "Assignment_2/sprite_frames/sprite_b.png",
+    "Assignment_2/sprite_frames/sprite_b (1).png",
+    "Assignment_2/sprite_frames/sprite_b (2).png",
+    "Assignment_2/sprite_frames/sprite_b (3).png",
+    "Assignment_2/sprite_frames/sprite_b (4).png",
+    "Assignment_2/sprite_frames/sprite_b (5).png",
+    "Assignment_2/sprite_frames/sprite_b (6).png",
+    "Assignment_2/sprite_frames/sprite_b (7).png",
+        ]).batch_spawn_agents(n_foxes, Foxes, images=["Assignment_0/images/triangle@50px.png"]).run()
     
 run_simulation(20,3)
