@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import sys
 from datetime import timedelta
 import datetime
+import polars as pl
 '''
 ---+++ TO DO +++---
 
@@ -75,6 +76,7 @@ class Foxes(Agent):
         self.health = 5
 
         self.reproduction_flag = False
+        self.eat_flag = False
 
     def change_position(self):
         self.there_is_no_escape()
@@ -85,6 +87,7 @@ class Foxes(Agent):
         self.wandering()
         self.death()
         self.eat()
+        self.reproduction()
 
         #self.save_data("population", Foxes)
 
@@ -95,7 +98,7 @@ class Foxes(Agent):
 
     def eat(self):
 
-        self.reproduction_flag = True
+        #self.reproduction_flag = True
     
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
@@ -105,10 +108,15 @@ class Foxes(Agent):
                     print(f"Fox ID {self.id} ate: +5HP, health:{self.health}")
                     agent.eaten()
                     agent.death()
-                    self.reproduction()
+                    self.eat_flag = True
+            
+
+        
                 
     def reproduction(self):
-        self.reproduce()
+        if self.eat_flag == True:
+            self.reproduce()
+            self.eat_flag = False
         return
 
 
@@ -277,56 +285,88 @@ class CompetitionSimulation(Simulation):
     config: CompetitionConfig
     global_delta_time: int = 0
 
+    def __init__(self, config):
+        super().__init__(config)
+        self.rabbit_population = []
+        self.fox_population = []
+
+
     def before_update(self):
         CompetitionSimulation.global_delta_time += 1
+
+        self.save_population_data()
+
         super().before_update()
 
+    def rabbit_pop(self):
+        return self.rabbit_population
 
-def run_simulation(n_rabbits, n_foxes):
-    CompetitionSimulation(
-        CompetitionConfig(
-            #duration=10_000,
-            fps_limit=120,
-            seed=1,
-            movement_speed=1,
-            radius=50,
-            image_rotation=True,
-        )
+    def fox_pop(self):
+        return self.fox_population
 
-            
-    ).batch_spawn_agents(n_rabbits, Rabbits, images=[
-    "Assignment_2/sprite_frames/sprite_l.png",
-    "Assignment_2/sprite_frames/sprite_l (1).png",
-    "Assignment_2/sprite_frames/sprite_l (2).png",
-    "Assignment_2/sprite_frames/sprite_l (3).png",
-    "Assignment_2/sprite_frames/sprite_l (4).png",
-    "Assignment_2/sprite_frames/sprite_l (5).png",
-    "Assignment_2/sprite_frames/sprite_l (6).png",
-    "Assignment_2/sprite_frames/sprite_l (7).png",
-    "Assignment_2/sprite_frames/sprite_r.png",
-    "Assignment_2/sprite_frames/sprite_r (1).png",
-    "Assignment_2/sprite_frames/sprite_r (2).png",
-    "Assignment_2/sprite_frames/sprite_r (3).png",
-    "Assignment_2/sprite_frames/sprite_r (4).png",
-    "Assignment_2/sprite_frames/sprite_r (5).png",
-    "Assignment_2/sprite_frames/sprite_r (6).png",
-    "Assignment_2/sprite_frames/sprite_r (7).png",
-    "Assignment_2/sprite_frames/sprite_f.png",
-    "Assignment_2/sprite_frames/sprite_f (1).png",
-    "Assignment_2/sprite_frames/sprite_f (2).png",
-    "Assignment_2/sprite_frames/sprite_f (3).png",
-    "Assignment_2/sprite_frames/sprite_f (4).png",
-    "Assignment_2/sprite_frames/sprite_f (5).png",
-    "Assignment_2/sprite_frames/sprite_f (6).png",
-    "Assignment_2/sprite_frames/sprite_f (7).png",
-    "Assignment_2/sprite_frames/sprite_b.png",
-    "Assignment_2/sprite_frames/sprite_b (1).png",
-    "Assignment_2/sprite_frames/sprite_b (2).png",
-    "Assignment_2/sprite_frames/sprite_b (3).png",
-    "Assignment_2/sprite_frames/sprite_b (4).png",
-    "Assignment_2/sprite_frames/sprite_b (5).png",
-    "Assignment_2/sprite_frames/sprite_b (6).png",
-    "Assignment_2/sprite_frames/sprite_b (7).png",
-        ]).batch_spawn_agents(n_foxes, Foxes, images=["Assignment_0/images/triangle@50px.png"]).run()
-    
-run_simulation(20,3)
+    def save_population_data(self):
+        rabbit_count = sum(1 for agent in self._agents if isinstance(agent, Rabbits) and agent.alive)
+        fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
+        self.rabbit_population.append(rabbit_count)
+        self.fox_population.append(fox_count)
+
+
+n_rabbits = 20
+n_foxes = 3
+
+df = (CompetitionSimulation(
+    CompetitionConfig(
+        #duration=10_000,
+        fps_limit=120,
+        seed=1,
+        movement_speed=1,
+        radius=50,
+        image_rotation=True,
+    )
+
+        
+).batch_spawn_agents(n_rabbits, Rabbits, 
+                        images=[
+"Assignment_2/sprite_frames/sprite_l.png",
+"Assignment_2/sprite_frames/sprite_l (1).png",
+"Assignment_2/sprite_frames/sprite_l (2).png",
+"Assignment_2/sprite_frames/sprite_l (3).png",
+"Assignment_2/sprite_frames/sprite_l (4).png",
+"Assignment_2/sprite_frames/sprite_l (5).png",
+"Assignment_2/sprite_frames/sprite_l (6).png",
+"Assignment_2/sprite_frames/sprite_l (7).png",
+"Assignment_2/sprite_frames/sprite_r.png",
+"Assignment_2/sprite_frames/sprite_r (1).png",
+"Assignment_2/sprite_frames/sprite_r (2).png",
+"Assignment_2/sprite_frames/sprite_r (3).png",
+"Assignment_2/sprite_frames/sprite_r (4).png",
+"Assignment_2/sprite_frames/sprite_r (5).png",
+"Assignment_2/sprite_frames/sprite_r (6).png",
+"Assignment_2/sprite_frames/sprite_r (7).png",
+"Assignment_2/sprite_frames/sprite_f.png",
+"Assignment_2/sprite_frames/sprite_f (1).png",
+"Assignment_2/sprite_frames/sprite_f (2).png",
+"Assignment_2/sprite_frames/sprite_f (3).png",
+"Assignment_2/sprite_frames/sprite_f (4).png",
+"Assignment_2/sprite_frames/sprite_f (5).png",
+"Assignment_2/sprite_frames/sprite_f (6).png",
+"Assignment_2/sprite_frames/sprite_f (7).png",
+"Assignment_2/sprite_frames/sprite_b.png",
+"Assignment_2/sprite_frames/sprite_b (1).png",
+"Assignment_2/sprite_frames/sprite_b (2).png",
+"Assignment_2/sprite_frames/sprite_b (3).png",
+"Assignment_2/sprite_frames/sprite_b (4).png",
+"Assignment_2/sprite_frames/sprite_b (5).png",
+"Assignment_2/sprite_frames/sprite_b (6).png",
+"Assignment_2/sprite_frames/sprite_b (7).png",
+    ]).batch_spawn_agents(n_foxes, Foxes, images=["Assignment_0/images/triangle@50px.png"]).run()
+
+.snapshots.group_by("frame", "image_index")
+.agg(pl.count("id").alias("agents"))
+
+)
+
+print(df)
+
+plot = sns.relplot(x=df["frame"], y =df["agents"], hue=df["image_index"])
+plot.savefig("population.png", dpi = 300)
