@@ -24,13 +24,19 @@ import datetime
 '''
 
 '''
-Dying method:
-    have a timer, when timer runs out fox dies
-    if fox eats rabit, they add base time + gaussian noise to the timer
-
-
-    or have a health variable, every D time steps, there is a probability that they lose 1 health
-    if fox eats a rabbit, they gain some health back.
+---+++---+++ Cool things to add +++---+++---
+-+
+- - - Fox stears towards closest rabbit
+-+
+- - - Rabbit runs away from Fox
+-+ 
+- - - Agents don't collide with eachother
+-+
+- - -
+-+
+- - -
+-+
+---+++---+++---+++---+++---+++---+++---+++---
 '''
 
 
@@ -75,17 +81,12 @@ class Foxes(Agent):
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
-            #print(agent)
-            #if agent.isinstance() == Rabbits:
-
                 if dist < 10:
                     self.health += 5
-                    print("health +5")
+                    print("Fox: health +5",self.health)
                     agent.eaten()
                     agent.death()
                 
-
-
     def reproduction(self):
         pass
 
