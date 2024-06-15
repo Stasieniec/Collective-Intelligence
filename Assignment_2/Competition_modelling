@@ -72,7 +72,7 @@ class Foxes(Agent):
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
         self.state = 'wandering'
-        self.health = 100
+        self.health = 5
 
         self.reproduction_flag = False
 
@@ -85,6 +85,8 @@ class Foxes(Agent):
         self.wandering()
         self.death()
         self.eat()
+
+        #self.save_data("population", Foxes)
 
 
 
@@ -100,7 +102,7 @@ class Foxes(Agent):
             if isinstance(agent, Rabbits):
                 if dist < 10:
                     self.health += 5
-                    print("Fox: health +5",self.health)
+                    print(f"Fox ID {self.id} ate: +5HP, health:{self.health}")
                     agent.eaten()
                     agent.death()
                     self.reproduce()
@@ -113,7 +115,7 @@ class Foxes(Agent):
 
     def death(self):
         if self.health == 0:
-            print("Fox died of starvation, health 0")
+            print(f"Fox ID {self.id} died of starvation, silly fox")
             self.kill()
             return
 
