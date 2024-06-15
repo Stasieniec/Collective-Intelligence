@@ -34,7 +34,7 @@ Animation brainstorm:
 
 '''
 ---+++---+++ Cool things to add +++---+++---
-- - - Animation for the rabbits
+- - - Animation for the rabbits and foxes
 -+
 - - - Fox stears towards closest rabbit
 -+
@@ -74,6 +74,8 @@ class Foxes(Agent):
         self.state = 'wandering'
         self.health = 100
 
+        self.reproduction_flag = False
+
     def change_position(self):
         self.there_is_no_escape()
 
@@ -84,10 +86,15 @@ class Foxes(Agent):
         self.death()
         self.eat()
 
+
+
     def predator(self):
         pass
 
     def eat(self):
+
+        self.reproduction_flag = True
+    
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
@@ -96,9 +103,8 @@ class Foxes(Agent):
                     print("Fox: health +5",self.health)
                     agent.eaten()
                     agent.death()
+                    self.reproduce()
                 
-    def reproduction(self):
-        pass
 
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
