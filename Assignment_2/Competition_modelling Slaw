@@ -59,7 +59,7 @@ class CompetitionConfig(Config):
     delta_time: float = 1.0                         # Increased delta time for larger time steps
     mass: int = 20
 
-    movement_speed_f: float = 1.0                   # Increased movement speed for foxes
+    movement_speed_f: float = 2                  # Increased movement speed for foxes
     movement_speed_r: float = 1.0                   # Increased movement speed for rabbits
     max_angle_change: float = 30.0 
 
@@ -138,7 +138,7 @@ class Foxes(Agent):
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
-                if dist < 10:
+                if dist < 30:
                     self.health += 5
                     print(f"Fox ID {self.id} ate: +5HP, health: {self.health}")
                     agent.eaten()
@@ -203,114 +203,133 @@ class Rabbits(Agent):
     p_reproduction: float = 0.05
 
     time_step_d: int = 100
-
+    fleeing_distance: int = 100  # Distance threshold to start fleeing
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
-        if move is None:                            
+        if move is None:
             angle = random.uniform(0, 360)
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
-
         self.state = 'wandering'
-
         self.health = 1
-
         self.frame = 0
 
-        
-
-    def animation(self, current_pos, next_pos):
-
-        dx = current_pos.x - next_pos.x
-        dy = current_pos.y - next_pos.y
-
-        # Determine the direction of movement
-
-        # Moving left
-        if dx < 0:
-            
-            start_frame = 0
-        
-        # Moving right
-        elif dx > 0:
-            
-            start_frame = 8
-
-        # Moving down
-        if dy < 0:
-            
-            start_frame = 8
-
-        # Moving up
-        elif dy > 0:
-            
-            start_frame = 24
-
-        # Every 8 time steps, update the frame 
-        if CompetitionSimulation.global_delta_time % 8 == 0:
-            self.change_image(start_frame + self.frame)
-            self.frame += 1
-
-        # Reset frame animation loop 
-        if self.frame == 8:
-            self.frame = 0
-
-
-    def change_position(self):
-        self.there_is_no_escape()
-
     def update(self):
-        self.wandering()
+        if self.should_flee():
+            self.flee_from_fox()
+        else:
+            self.wandering()
+
         self.reproduction()
 
-    def eaten(self):
-        self.health = 0
-        return
+    def should_flee(self):
+        closest_fox = self.find_closest_fox()
+        if closest_fox:
+            return self.pos.distance_to(closest_fox.pos) < self.fleeing_distance
+        return False
 
-    def death(self):
-        if self.health == 0:
-            print("Rabbit died by fox, health 0")
-            self.kill()
-            return
+    def flee_from_fox(self):
+        closest_fox = self.find_closest_fox()
+        if closest_fox:
+            direction = (self.pos - closest_fox.pos).normalize()
+            self.move = direction * self.config.movement_speed_r
+            next_step = self.pos + self.move * self.config.delta_time
+            self.obstacle_avoidance(next_step)
+            self.boundary_avoidance(next_step)
+            self.animation(self.pos, next_step)
+            self.pos += self.move * self.config.delta_time
+        else:
+            self.wandering()
+
+    def find_closest_fox(self):
+        closest_fox = None
+        min_dist = float('inf')
+        for agent in self._simulation._agents:
+            if isinstance(agent, Foxes) and agent.alive:
+                dist = self.pos.distance_to(agent.pos)
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_fox = agent
+        return closest_fox
 
     def reproduction(self):
-
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
             if random.random() < self.p_reproduction:
                 self.reproduce()
-            return
-    def wandering(self):
-        '''
-        Elicits a random walking behaviour of the Agent
-        by picking a random angle +- 30 degrees,
-        while checking if the next step is an obstacle
-        
-        '''
 
+    def wandering(self):
         if random.random() < self.config.p_change_direction:
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
-        
+
         self.move = self.move.normalize() * self.config.movement_speed_r
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
-        self.animation(self.pos,next_step)
-        self.pos += self.move * self.config.delta_time
+        self.boundary_avoidance(next_step)
+        self.animation(self.pos, next_step)
+        self.pos = next_step
 
     def obstacle_avoidance(self, next_step):
-        '''
-        Checks whether the next step is colliding with an obstacle
-        '''
         while self.is_obstacle(next_step):
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
             next_step = self.pos + self.move * self.config.delta_time
 
+    def boundary_avoidance(self, next_step):
+        margin = 50  # Distance from the edge to start avoiding
+        environment_width, environment_height = 750, 750  # Size of your simulated environment
+
+        if next_step.x < margin:
+            self.move.x = abs(self.move.x)  # Move away from left edge
+        elif next_step.x > environment_width - margin:
+            self.move.x = -abs(self.move.x)  # Move away from right edge
+
+        if next_step.y < margin:
+            self.move.y = abs(self.move.y)  # Move away from top edge
+        elif next_step.y > environment_height - margin:
+            self.move.y = -abs(self.move.y)  # Move away from bottom edge
+
+        # Ensure rabbits do not go out of bounds
+        self.pos.x = max(margin, min(self.pos.x, environment_width - margin))
+        self.pos.y = max(margin, min(self.pos.y, environment_height - margin))
+
     def is_obstacle(self, position):
         if position.x < 0 or position.x >= 750 or position.y < 0 or position.y >= 750:
             return True
         return False
+
+    def animation(self, current_pos, next_pos):
+        dx = current_pos.x - next_pos.x
+        dy = current_pos.y - next_pos.y
+
+        # Determine the direction of movement
+        if dx < 0:
+            start_frame = 0  # Moving left
+        elif dx > 0:
+            start_frame = 8  # Moving right
+
+        if dy < 0:
+            start_frame = 8  # Moving down
+        elif dy > 0:
+            start_frame = 24  # Moving up
+
+        if CompetitionSimulation.global_delta_time % 8 == 0:
+            self.change_image(start_frame + self.frame)
+            self.frame += 1
+
+        if self.frame == 8:
+            self.frame = 0
+
+    def eaten(self):
+        self.health = 0  # Define what happens when a rabbit is eaten
+        self.death()  # Call the death method when a rabbit is eaten
+
+    def death(self):
+        if self.health == 0:
+            print("Rabbit died by fox, health 0")
+            self.kill()  # Implement any other actions related to rabbit death
+
 
 
 class CompetitionSimulation(Simulation):
@@ -345,7 +364,7 @@ class CompetitionSimulation(Simulation):
 
 
 n_rabbits = 20
-n_foxes = 10
+n_foxes = 20
 
 df = (CompetitionSimulation(
     CompetitionConfig(
