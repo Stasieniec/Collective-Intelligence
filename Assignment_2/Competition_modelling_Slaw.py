@@ -59,8 +59,8 @@ class CompetitionConfig(Config):
     delta_time: float = 1.0                         # Increased delta time for larger time steps
     mass: int = 20
 
-    movement_speed_f: float = 2                  # Increased movement speed for foxes
-    movement_speed_r: float = 1.0                   # Increased movement speed for rabbits
+    movement_speed_f: float = 2.1                # Increased movement speed for foxes
+    movement_speed_r: float = 1.2                   # Increased movement speed for rabbits
     max_angle_change: float = 30.0 
 
     p_change_direction: float = 0.05
@@ -77,7 +77,7 @@ class Foxes(Agent):
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
         self.state = 'wandering'
-        self.health = 5
+        self.health = 10
 
         self.reproduction_flag = False
         self.eat_flag = False
@@ -156,7 +156,7 @@ class Foxes(Agent):
         return agent_distances[:5]  # Return closest 5 agents
                 
     def reproduction(self):
-        if self.eat_flag:
+        if self.eat_flag:  # Adjust the probability as needed
             self.reproduce()
             self.eat_flag = False
 
@@ -200,7 +200,7 @@ class Foxes(Agent):
 class Rabbits(Agent):
     config: CompetitionConfig
     animation_frames: int = 8
-    p_reproduction: float = 0.05
+    p_reproduction: float = 0.1
 
     time_step_d: int = 100
     fleeing_distance: int = 100  # Distance threshold to start fleeing
@@ -363,8 +363,8 @@ class CompetitionSimulation(Simulation):
         self.fox_population.append(fox_count)
 
 
-n_rabbits = 20
-n_foxes = 20
+n_rabbits = 16
+n_foxes = 4
 
 df = (CompetitionSimulation(
     CompetitionConfig(
