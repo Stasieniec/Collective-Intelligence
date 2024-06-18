@@ -11,6 +11,8 @@ import sys
 from datetime import timedelta
 import datetime
 import polars as pl
+from PIL import Image
+
 '''
 ---+++ TO DO +++---
 
@@ -214,6 +216,7 @@ class Rabbits(Agent):
         self.state = 'wandering'
         self.health = 1
         self.frame = 0
+        self.energy = 5
 
     def update(self):
         if self.should_flee():
@@ -222,7 +225,14 @@ class Rabbits(Agent):
             self.wandering()
 
         self.reproduction()
-
+        
+    def lose_health(self):
+        if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
+            self.health -= 1
+            return
+        
+    def add_health(self):
+        pass
     def should_flee(self):
         closest_fox = self.find_closest_fox()
         if closest_fox:
@@ -330,8 +340,26 @@ class Rabbits(Agent):
             print("Rabbit died by fox, health 0")
             self.kill()  # Implement any other actions related to rabbit death
 
+class Grass(Agent):
+    def __init__(self, images, simulation, pos=None, move=None):
+        super().__init__(images, simulation, pos, move)
+        self.state = 'static'
+        self.pos = Vector2(random.randint(0, 750), random.randint(0, 750))
+        self.move=Vector2(0, 0)
+        
+    def update(self):
+        pass
 
+def resize_image(image_path, output_path, size):
+    # Ensure the output path has a valid image file extension
+    valid_extensions = ['.png', '.jpg', '.jpeg']
+    if not any(output_path.lower().endswith(ext) for ext in valid_extensions):
+        raise ValueError(f"The output path must have a valid image file extension. Valid extensions are: {', '.join(valid_extensions)}")
 
+    with Image.open(image_path) as img:
+        resized_img = img.resize(size, Image.Resampling.LANCZOS)
+        resized_img.save(output_path)   
+        
 class CompetitionSimulation(Simulation):
     
     config: CompetitionConfig
@@ -341,13 +369,16 @@ class CompetitionSimulation(Simulation):
         super().__init__(config)
         self.rabbit_population = []
         self.fox_population = []
+        self.grass_population = []
 
+    
 
     def before_update(self):
         CompetitionSimulation.global_delta_time += 1
 
         self.save_population_data()
-
+        if random.random() < 0.01:  # Adjust the probability as needed
+            self.spawn_grass()
         super().before_update()
 
     def rabbit_pop(self):
@@ -355,7 +386,17 @@ class CompetitionSimulation(Simulation):
 
     def fox_pop(self):
         return self.fox_population
-
+    '''
+    def spawn_grass(self):
+        pos = Vector2(random.randint(0, 750), random.randint(0, 750))  # Random position within bounds
+        grass = Grass(images=["Assignment_2/images/grass.png"], simulation=self, pos=pos)
+        self.spawn_agent(grass, ["Assignment_2/images/grass.png"])
+        self.grass_population.append(grass)
+    '''
+    def spawn_grass(self):
+          # Random position within bounds
+          
+        self.spawn_agent(Grass, images=["Assignment_2/images/grass (1) (1).png"])
     def save_population_data(self):
         rabbit_count = sum(1 for agent in self._agents if isinstance(agent, Rabbits) and agent.alive)
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
@@ -365,6 +406,9 @@ class CompetitionSimulation(Simulation):
 
 n_rabbits = 16
 n_foxes = 4
+
+#resize_image("Assignment_2/images/grass.png", "Assignment_2/images", (100, 100))
+
 
 df = (CompetitionSimulation(
     CompetitionConfig(
