@@ -224,6 +224,7 @@ class Rabbits(Agent):
         else:
             self.wandering()
 
+        self.check_for_grass()
         self.reproduction()
         
     def lose_health(self):
@@ -231,8 +232,10 @@ class Rabbits(Agent):
             self.health -= 1
             return
         
-    def add_health(self):
-        pass
+    def add_health(self, amount):
+        self.health += amount
+        print(f"Rabbit ID {self.id} gained {amount} health, current health: {self.health}")
+
     def should_flee(self):
         closest_fox = self.find_closest_fox()
         if closest_fox:
@@ -331,6 +334,12 @@ class Rabbits(Agent):
         if self.frame == 8:
             self.frame = 0
 
+    def check_for_grass(self):
+        for agent in self._simulation._agents:
+            if isinstance(agent, Grass) and self.pos.distance_to(agent.pos) < 10:  # Adjust distance as needed
+                self.add_health(2)  # Adjust the health gained as needed
+                agent.eaten()  # Remove the grass
+
     def eaten(self):
         self.health = 0  # Define what happens when a rabbit is eaten
         self.death()  # Call the death method when a rabbit is eaten
@@ -340,26 +349,21 @@ class Rabbits(Agent):
             print("Rabbit died by fox, health 0")
             self.kill()  # Implement any other actions related to rabbit death
 
+
 class Grass(Agent):
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
         self.state = 'static'
         self.pos = Vector2(random.randint(0, 750), random.randint(0, 750))
-        self.move=Vector2(0, 0)
-        
+        self.move = Vector2(0, 0)
+
     def update(self):
         pass
 
-def resize_image(image_path, output_path, size):
-    # Ensure the output path has a valid image file extension
-    valid_extensions = ['.png', '.jpg', '.jpeg']
-    if not any(output_path.lower().endswith(ext) for ext in valid_extensions):
-        raise ValueError(f"The output path must have a valid image file extension. Valid extensions are: {', '.join(valid_extensions)}")
+    def eaten(self):
+        self.kill()  # Remove grass when eaten
+        print(f"Grass at {self.pos} was eaten")
 
-    with Image.open(image_path) as img:
-        resized_img = img.resize(size, Image.Resampling.LANCZOS)
-        resized_img.save(output_path)   
-        
 class CompetitionSimulation(Simulation):
     
     config: CompetitionConfig
