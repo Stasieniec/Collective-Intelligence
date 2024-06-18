@@ -67,6 +67,9 @@ class Foxes(Agent):
     config: CompetitionConfig
     animation_frames: int = 6
 
+    death_probability: float = 0.05
+
+
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
         if move is None:                            
@@ -161,7 +164,9 @@ class Foxes(Agent):
 
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
-            self.health -= 1
+            if random.random() < self.death_probability:
+                print(f"Fox probabilistically died")
+                self.health = 0
             return
 
     def death(self):
@@ -350,7 +355,6 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
-        print(self.fox_population)
 
 
 n_rabbits = 20

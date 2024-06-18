@@ -54,6 +54,7 @@ class Bird(Agent):
 
         if self.in_proximity_accuracy().count() == 0:
             self.pos += self.move * self.config.delta_time
+            return
         else:
 
 

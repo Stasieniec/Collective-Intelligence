@@ -49,7 +49,7 @@ Animation brainstorm:
 -+
 ---+++---+++---+++---+++---+++---+++---+++---
 '''
-
+list_for_plotting = []
 
 class CompetitionConfig(Config):
     delta_time: float = 0.5                         # Value for time steps
@@ -350,57 +350,56 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
-        print(self.fox_population)
+        list_for_plotting.append((rabbit_count, fox_count))
 
 
-n_rabbits = 20
-n_foxes = 3
-
-df = (CompetitionSimulation(
+def run_simulation(n_rabbits, n_foxes, duration):
+    global list_for_plotting
+    list_for_plotting = []
+    
+    n_rabbits = n_rabbits
+    n_foxes = n_foxes
+    CompetitionSimulation(
     CompetitionConfig(
-        #duration=10_000,
+        duration=duration,
         fps_limit=120,
         seed=1,
         movement_speed=1,
         radius=50,
         image_rotation=True,
-    )
-
-        
-).batch_spawn_agents(n_rabbits, Rabbits, 
-                        images=[
-"Assignment_2/sprite_frames/sprite_l.png",
-"Assignment_2/sprite_frames/sprite_l (1).png",
-"Assignment_2/sprite_frames/sprite_l (2).png",
-"Assignment_2/sprite_frames/sprite_l (3).png",
-"Assignment_2/sprite_frames/sprite_l (4).png",
-"Assignment_2/sprite_frames/sprite_l (5).png",
-"Assignment_2/sprite_frames/sprite_l (6).png",
-"Assignment_2/sprite_frames/sprite_l (7).png",
-"Assignment_2/sprite_frames/sprite_r.png",
-"Assignment_2/sprite_frames/sprite_r (1).png",
-"Assignment_2/sprite_frames/sprite_r (2).png",
-"Assignment_2/sprite_frames/sprite_r (3).png",
-"Assignment_2/sprite_frames/sprite_r (4).png",
-"Assignment_2/sprite_frames/sprite_r (5).png",
-"Assignment_2/sprite_frames/sprite_r (6).png",
-"Assignment_2/sprite_frames/sprite_r (7).png",
-"Assignment_2/sprite_frames/sprite_f.png",
-"Assignment_2/sprite_frames/sprite_f (1).png",
-"Assignment_2/sprite_frames/sprite_f (2).png",
-"Assignment_2/sprite_frames/sprite_f (3).png",
-"Assignment_2/sprite_frames/sprite_f (4).png",
-"Assignment_2/sprite_frames/sprite_f (5).png",
-"Assignment_2/sprite_frames/sprite_f (6).png",
-"Assignment_2/sprite_frames/sprite_f (7).png",
-"Assignment_2/sprite_frames/sprite_b.png",
-"Assignment_2/sprite_frames/sprite_b (1).png",
-"Assignment_2/sprite_frames/sprite_b (2).png",
-"Assignment_2/sprite_frames/sprite_b (3).png",
-"Assignment_2/sprite_frames/sprite_b (4).png",
-"Assignment_2/sprite_frames/sprite_b (5).png",
-"Assignment_2/sprite_frames/sprite_b (6).png",
-"Assignment_2/sprite_frames/sprite_b (7).png",
+    )).batch_spawn_agents(n_rabbits, Rabbits, images=[
+    "Assignment_2/sprite_frames/sprite_l.png",
+    "Assignment_2/sprite_frames/sprite_l (1).png",
+    "Assignment_2/sprite_frames/sprite_l (2).png",
+    "Assignment_2/sprite_frames/sprite_l (3).png",
+    "Assignment_2/sprite_frames/sprite_l (4).png",
+    "Assignment_2/sprite_frames/sprite_l (5).png",
+    "Assignment_2/sprite_frames/sprite_l (6).png",
+    "Assignment_2/sprite_frames/sprite_l (7).png",
+    "Assignment_2/sprite_frames/sprite_r.png",
+    "Assignment_2/sprite_frames/sprite_r (1).png",
+    "Assignment_2/sprite_frames/sprite_r (2).png",
+    "Assignment_2/sprite_frames/sprite_r (3).png",
+    "Assignment_2/sprite_frames/sprite_r (4).png",
+    "Assignment_2/sprite_frames/sprite_r (5).png",
+    "Assignment_2/sprite_frames/sprite_r (6).png",
+    "Assignment_2/sprite_frames/sprite_r (7).png",
+    "Assignment_2/sprite_frames/sprite_f.png",
+    "Assignment_2/sprite_frames/sprite_f (1).png",
+    "Assignment_2/sprite_frames/sprite_f (2).png",
+    "Assignment_2/sprite_frames/sprite_f (3).png",
+    "Assignment_2/sprite_frames/sprite_f (4).png",
+    "Assignment_2/sprite_frames/sprite_f (5).png",
+    "Assignment_2/sprite_frames/sprite_f (6).png",
+    "Assignment_2/sprite_frames/sprite_f (7).png",
+    "Assignment_2/sprite_frames/sprite_b.png",
+    "Assignment_2/sprite_frames/sprite_b (1).png",
+    "Assignment_2/sprite_frames/sprite_b (2).png",
+    "Assignment_2/sprite_frames/sprite_b (3).png",
+    "Assignment_2/sprite_frames/sprite_b (4).png",
+    "Assignment_2/sprite_frames/sprite_b (5).png",
+    "Assignment_2/sprite_frames/sprite_b (6).png",
+    "Assignment_2/sprite_frames/sprite_b (7).png",
     ]).batch_spawn_agents(n_foxes, Foxes, 
                           images=
                           ["Assignment_2/sprite_frames_fox/fox_sprite.png",
@@ -411,13 +410,8 @@ df = (CompetitionSimulation(
                            "Assignment_2/sprite_frames_fox/fox_sprite (5).png"
                            
                            ]).run()
+    return list_for_plotting
 
-.snapshots.group_by("frame", "image_index")
-.agg(pl.count("id").alias("agents"))
 
-)
+import matplotlib.pyplot as plt
 
-print(df)
-
-plot = sns.relplot(x=df["frame"], y =df["agents"], hue=df["image_index"])
-plot.savefig("population.png", dpi = 300)

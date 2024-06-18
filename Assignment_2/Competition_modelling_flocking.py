@@ -67,6 +67,9 @@ class Foxes(Agent):
     config: CompetitionConfig
     animation_frames: int = 6
 
+    death_probability: float = 0.05
+
+
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
         if move is None:                            
@@ -161,7 +164,9 @@ class Foxes(Agent):
 
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
-            self.health -= 1
+            if random.random() < self.death_probability:
+                print(f"Fox probabilistically died")
+                self.health = 0
             return
 
     def death(self):
@@ -177,16 +182,80 @@ class Foxes(Agent):
         while checking if the next step is an obstacle
         
         '''
-
-        if random.random() < self.config.p_change_direction:
-            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
-            self.move = self.move.rotate(angle_change)
+        fox_neighbours = [(agent, dist) for agent, dist in self.in_proximity_accuracy() if isinstance(agent, Foxes)]
         
-        self.move = self.move.normalize() * self.config.movement_speed_f
-        next_step = self.pos + self.move * self.config.delta_time
-        self.obstacle_avoidance(next_step)
-        #self.animation(self.pos,next_step)
-        self.pos += self.move * self.config.delta_time
+        in_proximity = list(self.in_proximity_accuracy())
+
+        #fox_neighbours
+
+
+        #if self.in_proximity_accuracy().count() == 0:
+        if not fox_neighbours:
+            if random.random() < self.config.p_change_direction:
+                angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+                self.move = self.move.rotate(angle_change)
+            
+            self.move = self.move.normalize() * self.config.movement_speed_f
+            next_step = self.pos + self.move * self.config.delta_time
+            self.obstacle_avoidance(next_step)
+            #self.animation(self.pos,next_step)
+            self.pos += self.move * self.config.delta_time
+            return
+
+        else:
+            al, sum_vel = self.alignment(fox_neighbours)
+            a =  al * 0.5
+            s = self.separation(fox_neighbours) * 0.5
+            c = self.cohesion(fox_neighbours) * 0.5
+
+        f_total = (a+s+c)/self.config.mass
+
+        if self.move.length() > sum_vel.length():
+            self.move.normalize() * sum_vel
+            
+        # Move the boid
+        self.move += f_total
+        self.pos += self.move * self.config.delta_time * 2
+
+    def alignment(self,in_proximity):
+        
+        sum_vel = Vector2(0,0)
+        for agent, dist in in_proximity:
+            vel = agent.move.normalize()
+            sum_vel += vel
+        
+        avg_vel = sum_vel / len(in_proximity)
+
+        Vboid = self.move
+        alignment = avg_vel - Vboid
+
+        return alignment, sum_vel
+
+    def separation(self,in_proximity):
+
+        sum_pos = Vector2(0,0)
+        for agent, dist in in_proximity:
+            sum_pos += self.pos - agent.pos
+
+        avg_pos = sum_pos / len(in_proximity)
+
+        return avg_pos
+
+    def cohesion(self,in_proximity):
+
+        sum_pos = Vector2(0,0)
+        for agent, dist in in_proximity:
+            sum_pos += agent.pos
+
+        avg_pos = sum_pos / len(in_proximity)
+
+        fc = avg_pos - self.pos
+
+        Vboid = self.move
+        cohesion = fc - Vboid
+
+        return cohesion
+
     
     def obstacle_avoidance(self, next_step):
         '''
@@ -350,11 +419,10 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
-        print(self.fox_population)
 
 
 n_rabbits = 20
-n_foxes = 3
+n_foxes = 20
 
 df = (CompetitionSimulation(
     CompetitionConfig(
@@ -412,12 +480,5 @@ df = (CompetitionSimulation(
                            
                            ]).run()
 
-.snapshots.group_by("frame", "image_index")
-.agg(pl.count("id").alias("agents"))
 
 )
-
-print(df)
-
-plot = sns.relplot(x=df["frame"], y =df["agents"], hue=df["image_index"])
-plot.savefig("population.png", dpi = 300)

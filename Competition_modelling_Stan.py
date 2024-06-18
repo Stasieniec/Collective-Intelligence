@@ -49,7 +49,7 @@ Animation brainstorm:
 -+
 ---+++---+++---+++---+++---+++---+++---+++---
 '''
-
+list_for_plotting = []
 
 class CompetitionConfig(Config):
     delta_time: float = 0.5                         # Value for time steps
@@ -350,7 +350,7 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
-        print(self.fox_population)
+        list_for_plotting.append((rabbit_count, fox_count))
 
 
 n_rabbits = 20
@@ -358,7 +358,7 @@ n_foxes = 3
 
 df = (CompetitionSimulation(
     CompetitionConfig(
-        #duration=10_000,
+        duration=1000,
         fps_limit=120,
         seed=1,
         movement_speed=1,
@@ -412,12 +412,23 @@ df = (CompetitionSimulation(
                            
                            ]).run()
 
-.snapshots.group_by("frame", "image_index")
-.agg(pl.count("id").alias("agents"))
-
 )
 
-print(df)
+import matplotlib.pyplot as plt
 
-plot = sns.relplot(x=df["frame"], y =df["agents"], hue=df["image_index"])
-plot.savefig("population.png", dpi = 300)
+
+print(list_for_plotting)
+
+# Assuming list_for_plotting is structured as [(fox_population, rabbit_population)]
+# Extracting fox and rabbit populations
+fox_populations, rabbit_populations = zip(*list_for_plotting)
+
+# Plotting
+plt.figure(figsize=(10, 5))
+plt.plot(fox_populations, label='Fox Population')
+plt.plot(rabbit_populations, label='Rabbit Population')
+plt.title('Population Dynamics')
+plt.xlabel('Time Steps')
+plt.ylabel('Population')
+plt.legend()
+plt.show()
