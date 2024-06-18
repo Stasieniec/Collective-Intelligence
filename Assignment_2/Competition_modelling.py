@@ -65,6 +65,7 @@ class CompetitionConfig(Config):
 
 class Foxes(Agent):
     config: CompetitionConfig
+    animation_frames: int = 6
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
@@ -73,7 +74,9 @@ class Foxes(Agent):
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
         self.state = 'wandering'
-        self.health = 5
+        self.health = 10
+
+        self.frame = 0
 
         self.reproduction_flag = False
         self.eat_flag = False
@@ -90,6 +93,42 @@ class Foxes(Agent):
         self.reproduction()
 
         #self.save_data("population", Foxes)
+
+    # def animation(self, current_pos, next_pos):
+
+    #     dx = current_pos.x - next_pos.x
+    #     dy = current_pos.y - next_pos.y
+
+    #     # Determine the direction of movement
+
+    #     # Moving left
+    #     if dx < 0:
+            
+    #         start_frame = 0
+        
+    #     # Moving right
+    #     elif dx > 0:
+            
+    #         start_frame = 2
+
+    #     # # Moving down
+    #     # if dy < 0:
+            
+    #     #     start_frame = 8
+
+    #     # # Moving up
+    #     # elif dy > 0:
+            
+    #     #     start_frame = 24
+
+    #     # Every 8 time steps, update the frame 
+    #     if CompetitionSimulation.global_delta_time % 8 == 0:
+    #         self.change_image(start_frame + self.frame)
+    #         self.frame += 1
+
+    #     # Reset frame animation loop 
+    #     if self.frame == 5:
+    #         self.frame = 0
 
 
 
@@ -146,6 +185,7 @@ class Foxes(Agent):
         self.move = self.move.normalize() * self.config.movement_speed_f
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
+        #self.animation(self.pos,next_step)
         self.pos += self.move * self.config.delta_time
     
     def obstacle_avoidance(self, next_step):
@@ -166,7 +206,7 @@ class Foxes(Agent):
 class Rabbits(Agent):
     config: CompetitionConfig
     animation_frames: int = 8
-    p_reproduction: float = 0.05
+    p_reproduction: float = 0.09
 
     time_step_d: int = 100
 
@@ -295,6 +335,7 @@ class CompetitionSimulation(Simulation):
         CompetitionSimulation.global_delta_time += 1
 
         self.save_population_data()
+        
 
         super().before_update()
 
@@ -309,6 +350,7 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
+        print(self.fox_population)
 
 
 n_rabbits = 20
@@ -359,7 +401,16 @@ df = (CompetitionSimulation(
 "Assignment_2/sprite_frames/sprite_b (5).png",
 "Assignment_2/sprite_frames/sprite_b (6).png",
 "Assignment_2/sprite_frames/sprite_b (7).png",
-    ]).batch_spawn_agents(n_foxes, Foxes, images=["Assignment_0/images/triangle@50px.png"]).run()
+    ]).batch_spawn_agents(n_foxes, Foxes, 
+                          images=
+                          ["Assignment_2/sprite_frames_fox/fox_sprite.png",
+                           "Assignment_2/sprite_frames_fox/fox_sprite (1).png",
+                           "Assignment_2/sprite_frames_fox/fox_sprite (2).png",
+                           "Assignment_2/sprite_frames_fox/fox_sprite (3).png",
+                           "Assignment_2/sprite_frames_fox/fox_sprite (4).png",
+                           "Assignment_2/sprite_frames_fox/fox_sprite (5).png"
+                           
+                           ]).run()
 
 .snapshots.group_by("frame", "image_index")
 .agg(pl.count("id").alias("agents"))
