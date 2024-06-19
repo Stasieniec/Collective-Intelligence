@@ -23,7 +23,7 @@ class CompetitionConfig(Config):
     mass: int = 20
 
     movement_speed_f: float = 2                      # Velocity of the Agents
-    movement_speed_r: float = 0.5  
+    movement_speed_r: float = 2 
     max_angle_change: float = 30.0 
 
     p_change_direction: float = 0.05
@@ -42,7 +42,7 @@ class Foxes(Agent):
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
         self.state = 'wandering'
-        self.health = 10
+        self.health = 20
 
         self.frame = 0
 
@@ -73,7 +73,7 @@ class Foxes(Agent):
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
-                if dist < 10:
+                if dist < 20:
                     self.health += 5
                     print(f"Fox ID {self.id} ate: +5HP, health:{self.health}")
                     agent.eaten()
@@ -111,16 +111,76 @@ class Foxes(Agent):
         while checking if the next step is an obstacle
         
         '''
-
-        if random.random() < self.config.p_change_direction:
-            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
-            self.move = self.move.rotate(angle_change)
+        fox_neighbours = [(agent, dist) for agent, dist in self.in_proximity_accuracy() if isinstance(agent, Foxes)]
         
-        self.move = self.move.normalize() * self.config.movement_speed_f
-        next_step = self.pos + self.move * self.config.delta_time
-        self.obstacle_avoidance(next_step)
-        #self.animation(self.pos,next_step)
-        self.pos += self.move * self.config.delta_time
+        if not fox_neighbours:
+            if random.random() < self.config.p_change_direction:
+                angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+                self.move = self.move.rotate(angle_change)
+            
+            self.move = self.move.normalize() * self.config.movement_speed_f
+            next_step = self.pos + self.move * self.config.delta_time
+            self.obstacle_avoidance(next_step)
+            #self.animation(self.pos,next_step)
+            self.pos += self.move * self.config.delta_time
+            return
+        else:
+            al, sum_vel = self.alignment(fox_neighbours)
+            a =  al * 0.5
+            s = self.separation(fox_neighbours) * 0.5
+            c = self.cohesion(fox_neighbours) * 0.5
+
+        f_total = (a+s+c)/self.config.mass
+
+        if self.move.length() > sum_vel.length():
+            self.move.normalize() * sum_vel
+        
+        
+        # Move the boid
+        self.move += f_total
+        self.pos += self.move * self.config.delta_time * 2
+
+
+    def alignment(self,in_proximity):
+        
+        sum_vel = Vector2(0,0)
+        for agent, dist in in_proximity:
+            vel = agent.move.normalize()
+            sum_vel += vel
+        
+        avg_vel = sum_vel / len(in_proximity)
+
+        Vboid = self.move
+        alignment = avg_vel - Vboid
+
+        return alignment, sum_vel
+
+    def separation(self,in_proximity):
+
+        sum_pos = Vector2(0,0)
+        for agent, dist in in_proximity:
+            sum_pos += self.pos - agent.pos
+
+        avg_pos = sum_pos / len(in_proximity)
+
+        return avg_pos
+
+    def cohesion(self,in_proximity):
+
+        sum_pos = Vector2(0,0)
+        for agent, dist in in_proximity:
+            sum_pos += agent.pos
+
+        avg_pos = sum_pos / len(in_proximity)
+
+        fc = avg_pos - self.pos
+
+        Vboid = self.move
+        cohesion = fc - Vboid
+
+        return cohesion
+
+    
     
     def obstacle_avoidance(self, next_step):
         '''
@@ -238,7 +298,7 @@ class Rabbits(Agent):
         self.move = self.move.normalize() * self.config.movement_speed_r
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
-        self.animation(self.pos, next_step)
+        #self.animation(self.pos, next_step)
         self.pos += self.move * self.config.delta_time
     
     def siteBehaviour(self):
@@ -250,6 +310,7 @@ class Rabbits(Agent):
     def update(self):
         if self.state == 'wandering':
             self.wandering()
+
             if self.checkInSite():
                 self.state = 'in_site'
                 self.timer = CompetitionSimulation.global_delta_time
@@ -263,7 +324,6 @@ class Rabbits(Agent):
             self.leave_site()
             if not self.checkInSite():
                 self.state = 'wandering'
-
         self.reproduction()
         self.age += 0.001
         self.check_for_grass()
@@ -279,7 +339,7 @@ class Rabbits(Agent):
                 agent.eaten()  # Remove the
     def death(self):
         if self.health <= 0:
-            print("Rabbit died by fox, health 0")
+            #print("Rabbit died by fox, health 0")
             self.kill()
             return
 
@@ -298,7 +358,7 @@ class Rabbits(Agent):
         
     def add_health(self, amount):
         self.health += amount
-        print(f"Rabbit ID {self.id} gained {amount} health, current health: {self.health}")
+        #print(f"Rabbit ID {self.id} gained {amount} health, current health: {self.health}")
 
     def wandering(self):
         '''
@@ -308,19 +368,21 @@ class Rabbits(Agent):
         
         '''
 
-        if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
-            if random.random() < self.attraction_probability:
+
+        if random.random() < self.attraction_probability:
+            if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
                 print(f"ID {self.id} going to rabbit heaven")
                 self.move_towards_site()
-            else:
-                if random.random() < self.config.p_change_direction:
-                    angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
-                    self.move = self.move.rotate(angle_change)
+        else:
+            if random.random() < self.config.p_change_direction:
+                angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+                #print(angle_change)
+                self.move = self.move.rotate(angle_change)
 
         self.move = self.move.normalize() * self.config.movement_speed_r
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
-        self.animation(self.pos, next_step)
+        #self.animation(self.pos, next_step)
         self.pos += self.move * self.config.delta_time
 
     def obstacle_avoidance(self, next_step):
@@ -349,7 +411,7 @@ class Grass(Agent):
 
     def eaten(self):
         self.kill()  # Remove grass when eaten
-        print(f"Grass at {self.pos} was eaten")
+        #print(f"Grass at {self.pos} was eaten")
 
 class CompetitionSimulation(Simulation):
     
@@ -381,7 +443,7 @@ class CompetitionSimulation(Simulation):
     def spawn_grass(self):
           # Random position within bounds   
         self.spawn_agent(Grass, images=["Assignment_2/images/grass (1) (1).png"])
-        
+
     def save_population_data(self):
         rabbit_count = sum(1 for agent in self._agents if isinstance(agent, Rabbits) and agent.alive)
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
@@ -411,4 +473,4 @@ def run_simulation(n_rabbits, n_foxes, duration):
     return list_for_plotting
 
 
-run_simulation(0, 20, 5000)
+run_simulation(20, 10, 5000)
