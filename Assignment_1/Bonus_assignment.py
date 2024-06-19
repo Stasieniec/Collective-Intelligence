@@ -305,8 +305,8 @@ class AggregationSimulation(Simulation):
             resized_img.save(output_path)
 
     # with Image.open('Assignment_0/images/roach40.png') as img:
-    #     rotated_img = img.rotate(180, expand=True)
-    #     rotated_img.save('Assignment_0/images/roach40.png')
+        # rotated_img = img.rotate(90, expand=True)
+        # rotated_img.save('Assignment_0/images/roach40.png')
 
     def get_image_dimensions(self, image_path):
         with Image.open(image_path) as img:

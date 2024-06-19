@@ -69,9 +69,10 @@ class Foxes(Agent):
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
+        self.age = 1
         if move is None:                            
             angle = random.uniform(0, 360)
-            self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
+            self.move = Vector2(self.config.movement_speed * (1/self.age), 0).rotate(angle)
 
         self.state = 'wandering'
         self.health = 10
@@ -80,6 +81,7 @@ class Foxes(Agent):
 
         self.reproduction_flag = False
         self.eat_flag = False
+
 
     def change_position(self):
         self.there_is_no_escape()
@@ -91,6 +93,7 @@ class Foxes(Agent):
         self.death()
         self.eat()
         self.reproduction()
+        self.age += 0.001
 
         #self.save_data("population", Foxes)
 
@@ -182,7 +185,7 @@ class Foxes(Agent):
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
         
-        self.move = self.move.normalize() * self.config.movement_speed_f
+        self.move = self.move.normalize() * self.config.movement_speed_f * (1/self.age)
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
         #self.animation(self.pos,next_step)
@@ -213,9 +216,10 @@ class Rabbits(Agent):
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
+        self.age = 1
         if move is None:                            
             angle = random.uniform(0, 360)
-            self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
+            self.move = Vector2(self.config.movement_speed* (1/self.age), 0).rotate(angle)
 
 
         self.state = 'wandering'
@@ -223,6 +227,7 @@ class Rabbits(Agent):
         self.health = 1
 
         self.frame = 0
+
 
         
 
@@ -269,6 +274,7 @@ class Rabbits(Agent):
     def update(self):
         self.wandering()
         self.reproduction()
+        self.age += 0.001
 
     def eaten(self):
         self.health = 0
@@ -299,7 +305,7 @@ class Rabbits(Agent):
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
         
-        self.move = self.move.normalize() * self.config.movement_speed_r
+        self.move = self.move.normalize() * self.config.movement_speed_r * (1/self.age)
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
         self.animation(self.pos,next_step)
@@ -353,54 +359,53 @@ class CompetitionSimulation(Simulation):
         list_for_plotting.append((rabbit_count, fox_count))
 
 
-n_rabbits = 20
-n_foxes = 3
-
-df = (CompetitionSimulation(
+def run_simulation(n_rabbits, n_foxes, duration):
+    global list_for_plotting
+    list_for_plotting = []
+    
+    n_rabbits = n_rabbits
+    n_foxes = n_foxes
+    CompetitionSimulation(
     CompetitionConfig(
-        duration=1000,
+        duration=duration,
         fps_limit=120,
         seed=1,
         movement_speed=1,
         radius=50,
         image_rotation=True,
-    )
-
-        
-).batch_spawn_agents(n_rabbits, Rabbits, 
-                        images=[
-"Assignment_2/sprite_frames/sprite_l.png",
-"Assignment_2/sprite_frames/sprite_l (1).png",
-"Assignment_2/sprite_frames/sprite_l (2).png",
-"Assignment_2/sprite_frames/sprite_l (3).png",
-"Assignment_2/sprite_frames/sprite_l (4).png",
-"Assignment_2/sprite_frames/sprite_l (5).png",
-"Assignment_2/sprite_frames/sprite_l (6).png",
-"Assignment_2/sprite_frames/sprite_l (7).png",
-"Assignment_2/sprite_frames/sprite_r.png",
-"Assignment_2/sprite_frames/sprite_r (1).png",
-"Assignment_2/sprite_frames/sprite_r (2).png",
-"Assignment_2/sprite_frames/sprite_r (3).png",
-"Assignment_2/sprite_frames/sprite_r (4).png",
-"Assignment_2/sprite_frames/sprite_r (5).png",
-"Assignment_2/sprite_frames/sprite_r (6).png",
-"Assignment_2/sprite_frames/sprite_r (7).png",
-"Assignment_2/sprite_frames/sprite_f.png",
-"Assignment_2/sprite_frames/sprite_f (1).png",
-"Assignment_2/sprite_frames/sprite_f (2).png",
-"Assignment_2/sprite_frames/sprite_f (3).png",
-"Assignment_2/sprite_frames/sprite_f (4).png",
-"Assignment_2/sprite_frames/sprite_f (5).png",
-"Assignment_2/sprite_frames/sprite_f (6).png",
-"Assignment_2/sprite_frames/sprite_f (7).png",
-"Assignment_2/sprite_frames/sprite_b.png",
-"Assignment_2/sprite_frames/sprite_b (1).png",
-"Assignment_2/sprite_frames/sprite_b (2).png",
-"Assignment_2/sprite_frames/sprite_b (3).png",
-"Assignment_2/sprite_frames/sprite_b (4).png",
-"Assignment_2/sprite_frames/sprite_b (5).png",
-"Assignment_2/sprite_frames/sprite_b (6).png",
-"Assignment_2/sprite_frames/sprite_b (7).png",
+    )).batch_spawn_agents(n_rabbits, Rabbits, images=[
+    "Assignment_2/sprite_frames/sprite_l.png",
+    "Assignment_2/sprite_frames/sprite_l (1).png",
+    "Assignment_2/sprite_frames/sprite_l (2).png",
+    "Assignment_2/sprite_frames/sprite_l (3).png",
+    "Assignment_2/sprite_frames/sprite_l (4).png",
+    "Assignment_2/sprite_frames/sprite_l (5).png",
+    "Assignment_2/sprite_frames/sprite_l (6).png",
+    "Assignment_2/sprite_frames/sprite_l (7).png",
+    "Assignment_2/sprite_frames/sprite_r.png",
+    "Assignment_2/sprite_frames/sprite_r (1).png",
+    "Assignment_2/sprite_frames/sprite_r (2).png",
+    "Assignment_2/sprite_frames/sprite_r (3).png",
+    "Assignment_2/sprite_frames/sprite_r (4).png",
+    "Assignment_2/sprite_frames/sprite_r (5).png",
+    "Assignment_2/sprite_frames/sprite_r (6).png",
+    "Assignment_2/sprite_frames/sprite_r (7).png",
+    "Assignment_2/sprite_frames/sprite_f.png",
+    "Assignment_2/sprite_frames/sprite_f (1).png",
+    "Assignment_2/sprite_frames/sprite_f (2).png",
+    "Assignment_2/sprite_frames/sprite_f (3).png",
+    "Assignment_2/sprite_frames/sprite_f (4).png",
+    "Assignment_2/sprite_frames/sprite_f (5).png",
+    "Assignment_2/sprite_frames/sprite_f (6).png",
+    "Assignment_2/sprite_frames/sprite_f (7).png",
+    "Assignment_2/sprite_frames/sprite_b.png",
+    "Assignment_2/sprite_frames/sprite_b (1).png",
+    "Assignment_2/sprite_frames/sprite_b (2).png",
+    "Assignment_2/sprite_frames/sprite_b (3).png",
+    "Assignment_2/sprite_frames/sprite_b (4).png",
+    "Assignment_2/sprite_frames/sprite_b (5).png",
+    "Assignment_2/sprite_frames/sprite_b (6).png",
+    "Assignment_2/sprite_frames/sprite_b (7).png",
     ]).batch_spawn_agents(n_foxes, Foxes, 
                           images=
                           ["Assignment_2/sprite_frames_fox/fox_sprite.png",
@@ -411,24 +416,7 @@ df = (CompetitionSimulation(
                            "Assignment_2/sprite_frames_fox/fox_sprite (5).png"
                            
                            ]).run()
-
-)
-
-import matplotlib.pyplot as plt
+    return list_for_plotting
 
 
-print(list_for_plotting)
-
-# Assuming list_for_plotting is structured as [(fox_population, rabbit_population)]
-# Extracting fox and rabbit populations
-fox_populations, rabbit_populations = zip(*list_for_plotting)
-
-# Plotting
-plt.figure(figsize=(10, 5))
-plt.plot(fox_populations, label='Fox Population')
-plt.plot(rabbit_populations, label='Rabbit Population')
-plt.title('Population Dynamics')
-plt.xlabel('Time Steps')
-plt.ylabel('Population')
-plt.legend()
-plt.show()
+run_simulation(20, 3, 5000)
