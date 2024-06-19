@@ -11,6 +11,8 @@ import sys
 from datetime import timedelta
 import datetime
 import polars as pl
+
+
 '''
 ---+++ TO DO +++---
 
@@ -94,41 +96,41 @@ class Foxes(Agent):
 
         #self.save_data("population", Foxes)
 
-    # def animation(self, current_pos, next_pos):
+    def animation(self, current_pos, next_pos):
 
-    #     dx = current_pos.x - next_pos.x
-    #     dy = current_pos.y - next_pos.y
+        dx = current_pos.x - next_pos.x
+        dy = current_pos.y - next_pos.y
 
-    #     # Determine the direction of movement
+        # Determine the direction of movement
 
-    #     # Moving left
-    #     if dx < 0:
+        # Moving left
+        if dx < 0:
             
-    #         start_frame = 0
+            start_frame = 0
         
-    #     # Moving right
-    #     elif dx > 0:
+        # Moving right
+        elif dx > 0:
             
-    #         start_frame = 2
+            start_frame = 3
 
-    #     # # Moving down
-    #     # if dy < 0:
+        # # Moving down
+        # if dy < 0:
             
-    #     #     start_frame = 8
+        #     start_frame = 8
 
-    #     # # Moving up
-    #     # elif dy > 0:
+        # # Moving up
+        # elif dy > 0:
             
-    #     #     start_frame = 24
+        #     start_frame = 24
 
-    #     # Every 8 time steps, update the frame 
-    #     if CompetitionSimulation.global_delta_time % 8 == 0:
-    #         self.change_image(start_frame + self.frame)
-    #         self.frame += 1
+        # Every 8 time steps, update the frame 
+        if CompetitionSimulation.global_delta_time % 8 == 0:
+            self.change_image(start_frame + self.frame)
+            self.frame += 1
 
-    #     # Reset frame animation loop 
-    #     if self.frame == 5:
-    #         self.frame = 0
+        # Reset frame animation loop 
+        if self.frame == 3:
+            self.frame = 0
 
 
 
@@ -185,7 +187,7 @@ class Foxes(Agent):
         self.move = self.move.normalize() * self.config.movement_speed_f
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
-        #self.animation(self.pos,next_step)
+        self.animation(self.pos,next_step)
         self.pos += self.move * self.config.delta_time
     
     def obstacle_avoidance(self, next_step):
@@ -329,15 +331,23 @@ class CompetitionSimulation(Simulation):
         super().__init__(config)
         self.rabbit_population = []
         self.fox_population = []
+        self.background_image = pg.image.load("Assignment_2/images/yYC6_f.png")
 
 
     def before_update(self):
         CompetitionSimulation.global_delta_time += 1
 
+        
+
         self.save_population_data()
         
 
         super().before_update()
+
+    def after_update(self):
+
+        self._screen.blit(self.background_image, (0, 0))
+        return super().after_update()
 
     def rabbit_pop(self):
         return self.rabbit_population
@@ -350,7 +360,6 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
-        print(self.fox_population)
 
 
 n_rabbits = 20
@@ -412,12 +421,4 @@ df = (CompetitionSimulation(
                            
                            ]).run()
 
-.snapshots.group_by("frame", "image_index")
-.agg(pl.count("id").alias("agents"))
-
 )
-
-print(df)
-
-plot = sns.relplot(x=df["frame"], y =df["agents"], hue=df["image_index"])
-plot.savefig("population.png", dpi = 300)
