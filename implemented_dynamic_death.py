@@ -49,9 +49,7 @@ Animation brainstorm:
 -+
 ---+++---+++---+++---+++---+++---+++---+++---
 '''
-
-list_for_plotting_no_energy = []
-
+list_for_plotting = []
 
 class CompetitionConfig(Config):
     delta_time: float = 0.5                         # Value for time steps
@@ -69,11 +67,9 @@ class Foxes(Agent):
     config: CompetitionConfig
     animation_frames: int = 6
 
-    death_probability: float = 0.05
-
-
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
+        self.age = 1
         if move is None:                            
             angle = random.uniform(0, 360)
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
@@ -86,6 +82,7 @@ class Foxes(Agent):
         self.reproduction_flag = False
         self.eat_flag = False
 
+
     def change_position(self):
         self.there_is_no_escape()
 
@@ -96,6 +93,7 @@ class Foxes(Agent):
         self.death()
         self.eat()
         self.reproduction()
+        self.age += 0.001
 
         #self.save_data("population", Foxes)
 
@@ -166,13 +164,11 @@ class Foxes(Agent):
 
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
-            if random.random() < self.death_probability:
-                print(f"Fox probabilistically died")
-                self.health = 0
+            self.health -= (1 + self.age)
             return
 
     def death(self):
-        if self.health == 0:
+        if self.health <= 0: 
             print(f"Fox ID {self.id} died of starvation, silly fox")
             self.kill()
             return
@@ -220,6 +216,7 @@ class Rabbits(Agent):
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
+        self.age = 1
         if move is None:                            
             angle = random.uniform(0, 360)
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
@@ -230,6 +227,7 @@ class Rabbits(Agent):
         self.health = 1
 
         self.frame = 0
+
 
         
 
@@ -276,13 +274,14 @@ class Rabbits(Agent):
     def update(self):
         self.wandering()
         self.reproduction()
+        self.age += 0.001
 
     def eaten(self):
         self.health = 0
         return
 
     def death(self):
-        if self.health == 0:
+        if self.health <= 0:
             print("Rabbit died by fox, health 0")
             self.kill()
             return
@@ -355,17 +354,14 @@ class CompetitionSimulation(Simulation):
     def save_population_data(self):
         rabbit_count = sum(1 for agent in self._agents if isinstance(agent, Rabbits) and agent.alive)
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
-        if rabbit_count == 0 or fox_count == 0:
-            self.stop()
-            
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
-        list_for_plotting_no_energy.append((rabbit_count, fox_count))
+        list_for_plotting.append((rabbit_count, fox_count))
 
 
 def run_simulation(n_rabbits, n_foxes, duration):
-    global list_for_plotting_no_energy
-    list_for_plotting_no_energy = []
+    global list_for_plotting
+    list_for_plotting = []
     
     n_rabbits = n_rabbits
     n_foxes = n_foxes
@@ -420,4 +416,7 @@ def run_simulation(n_rabbits, n_foxes, duration):
                            "Assignment_2/sprite_frames_fox/fox_sprite (5).png"
                            
                            ]).run()
-    return list_for_plotting_no_energy
+    return list_for_plotting
+
+
+run_simulation(20, 3, 5000)
