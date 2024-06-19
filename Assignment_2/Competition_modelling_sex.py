@@ -156,7 +156,7 @@ class Foxes(Agent):
         
                 
     def reproduction(self):
-        reproduction_chance = 0.5  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.9  # 50% chance to reproduce upon meeting an opposite-sex partner
         if self.eat_flag and self.gender == 'female':
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender == 'male'), None)
             if compatible_partner and random.random() < reproduction_chance:
