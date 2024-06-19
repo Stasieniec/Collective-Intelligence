@@ -85,6 +85,7 @@ class Foxes(Agent):
 
         self.reproduction_flag = False
         self.eat_flag = False
+        self.gender = random.choice(['male', 'female'])  # Added gender
 
 
     def change_position(self):
@@ -160,9 +161,12 @@ class Foxes(Agent):
         
                 
     def reproduction(self):
-        if self.eat_flag == True:
-            self.reproduce()
-            self.eat_flag = False
+        reproduction_chance = 0.9  # 50% chance to reproduce upon meeting an opposite-sex partner
+        if self.eat_flag and self.gender == 'female':
+            compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender == 'male'), None)
+            if compatible_partner and random.random() < reproduction_chance:
+                self.reproduce()
+                self.eat_flag = False
         return
 
 
@@ -232,7 +236,7 @@ class Rabbits(Agent):
 
         self.frame = 0
         self.energy = 5
-
+        self.gender = random.choice(['male', 'female'])  # Added gender
         
 
     def animation(self, current_pos, next_pos):
@@ -297,11 +301,12 @@ class Rabbits(Agent):
             return
 
     def reproduction(self):
-
-        if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
-            if random.random() < self.p_reproduction:
+        reproduction_chance = 0.2  # 50% chance to reproduce upon meeting an opposite-sex partner
+        if CompetitionSimulation.global_delta_time % self.time_step_d == 0 and self.gender == 'female':
+            compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Rabbits) and agent[0].gender == 'male'), None)
+            if compatible_partner and random.random() < reproduction_chance:
                 self.reproduce()
-            return
+        return
 
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
@@ -456,4 +461,4 @@ def run_simulation(n_rabbits, n_foxes, duration):
     return list_for_plotting
 
 
-run_simulation(20, 3, 5000)
+run_simulation(20, 8, 5000)
