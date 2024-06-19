@@ -76,7 +76,7 @@ class Foxes(Agent):
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
         self.state = 'wandering'
-        self.health = 10
+        self.health = 15
 
         self.frame = 0
 
@@ -156,13 +156,19 @@ class Foxes(Agent):
         
                 
     def reproduction(self):
-        reproduction_chance = 0.9  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.9  # 90% chance to reproduce upon meeting an opposite-sex partner
+        proximity_threshold = 50  # Define a larger distance threshold for proximity
+
         if self.eat_flag and self.gender == 'female':
-            compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender == 'male'), None)
-            if compatible_partner and random.random() < reproduction_chance:
-                self.reproduce()
-                self.eat_flag = False
-        return
+            for agent, dist in self.in_proximity_accuracy():
+                if isinstance(agent, Foxes) and agent.gender == 'male' and dist < proximity_threshold:
+                    if random.random() < reproduction_chance:
+                        num_offspring = random.randint(1, 5)  # Produce 1 to 5 offspring at once
+                        for _ in range(num_offspring):
+                            self.reproduce()
+                        self.eat_flag = False  # Reset the flag after reproduction
+                        break  # Exit the loop after finding a suitable partner
+
 
 
     def lose_health(self):
@@ -288,7 +294,7 @@ class Rabbits(Agent):
             return
 
     def reproduction(self):
-        reproduction_chance = 0.2  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.3  # 50% chance to reproduce upon meeting an opposite-sex partner
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0 and self.gender == 'female':
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Rabbits) and agent[0].gender == 'male'), None)
             if compatible_partner and random.random() < reproduction_chance:
@@ -369,7 +375,7 @@ class CompetitionSimulation(Simulation):
 
 
 n_rabbits = 20
-n_foxes = 3
+n_foxes = 10
 
 df = (CompetitionSimulation(
     CompetitionConfig(
