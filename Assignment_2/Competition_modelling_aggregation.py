@@ -151,36 +151,6 @@ class Foxes(Agent):
                     agent.death()
                     self.eat_flag = True
             
-    def checkInSite(self):
-        '''
-        Method for checking whether an agent is on the site
-        because the provided on_site() does not work for me
-        '''
-        site_id = self.on_site_id() # Maybe use later for data
-
-        sites = [
-        (250, 375, self.config.site_width, self.config.site_width),
-        (500, 375, 100, 100)]
-
-        for site in sites:
-            site_x, site_y, site_width, site_height = site
-            half_width, half_height = site_width / 2, site_height / 2
-            if (site_x - half_width <= self.pos.x <= site_x + half_width and
-                site_y - half_height <= self.pos.y <= site_y + half_height):
-                return True
-        return False
-    
-    def siteBehaviour(self):
-        if self.checkInSite():
-            #stay there for a while
-            #eat up (fill HP?)
-            #leave
-            return
-        
-    def siteAggregation(self):
-        #every d time steps, sample probability of going to site
-        #higher probability, the lower the health ?
-        return
                 
     def reproduction(self):
         if self.eat_flag == True:
@@ -292,6 +262,36 @@ class Rabbits(Agent):
         if self.frame == 8:
             self.frame = 0
 
+    def checkInSite(self):
+        '''
+        Method for checking whether an agent is on the site
+        because the provided on_site() does not work for me
+        '''
+        site_id = self.on_site_id() # Maybe use later for data
+
+        sites = [
+        (250, 375, self.config.site_width, self.config.site_width),
+        (500, 375, 100, 100)]
+
+        for site in sites:
+            site_x, site_y, site_width, site_height = site
+            half_width, half_height = site_width / 2, site_height / 2
+            if (site_x - half_width <= self.pos.x <= site_x + half_width and
+                site_y - half_height <= self.pos.y <= site_y + half_height):
+                return True
+        return False
+    
+    def siteBehaviour(self):
+        if self.checkInSite():
+            #stay there for a while
+            #eat up (fill HP?)
+            #leave
+            return
+        
+    def siteAggregation(self):
+        #every d time steps, sample probability of going to site
+        #higher probability, the lower the health ?
+        return
 
     def change_position(self):
         self.there_is_no_escape()
