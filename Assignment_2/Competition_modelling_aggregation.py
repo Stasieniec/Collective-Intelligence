@@ -58,7 +58,7 @@ class CompetitionConfig(Config):
     mass: int = 20
 
     movement_speed_f: float = 2                      # Velocity of the Agents
-    movement_speed_r: float = 0.5  
+    movement_speed_r: float = 2  
     max_angle_change: float = 30.0 
 
     p_change_direction: float = 0.05
@@ -210,6 +210,13 @@ class Rabbits(Agent):
 
     time_step_d: int = 100
 
+    site_x = 500
+    site_y = 375
+    site_width = 100
+    site_height = 100
+    attraction_probability: float = 0.01
+    stay_duration: int = 200
+
 
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
@@ -223,6 +230,11 @@ class Rabbits(Agent):
         self.health = 1
 
         self.frame = 0
+
+        self.t_leave = 5000
+        self.timer = 0
+
+        self.leave_flag = True
 
         
 
@@ -262,42 +274,56 @@ class Rabbits(Agent):
         if self.frame == 8:
             self.frame = 0
 
+    def move_towards_site(self):
+        site_center = Vector2(self.site_x, self.site_y)
+        direction = (site_center - self.pos).normalize()
+        angle = math.degrees(math.atan2(direction.y, direction.x))
+        self.move = Vector2(self.config.movement_speed_r, 0).rotate(angle)
+
     def checkInSite(self):
         '''
         Method for checking whether an agent is on the site
         because the provided on_site() does not work for me
         '''
-        site_id = self.on_site_id() # Maybe use later for data
+        
+        #site_id = self.on_site_id() # Maybe use later for data
 
-        sites = [
-        (250, 375, self.config.site_width, self.config.site_width),
-        (500, 375, 100, 100)]
+        site = [500, 375, 100, 100]
 
-        for site in sites:
-            site_x, site_y, site_width, site_height = site
-            half_width, half_height = site_width / 2, site_height / 2
-            if (site_x - half_width <= self.pos.x <= site_x + half_width and
-                site_y - half_height <= self.pos.y <= site_y + half_height):
-                return True
+        site_x, site_y, site_width, site_height = site
+        half_width, half_height = site_width / 2, site_height / 2
+        if (site_x - half_width <= self.pos.x <= site_x + half_width and
+            site_y - half_height <= self.pos.y <= site_y + half_height):
+            #print(f"rabbit {self.id} in rabbit heaven ")
+            return True
+        
         return False
     
     def siteBehaviour(self):
-        if self.checkInSite():
-            #stay there for a while
-            #eat up (fill HP?)
-            #leave
-            return
-        
-    def siteAggregation(self):
-        #every d time steps, sample probability of going to site
-        #higher probability, the lower the health ?
-        return
+        self.freeze_movement()
+
 
     def change_position(self):
         self.there_is_no_escape()
 
     def update(self):
-        self.wandering()
+
+        if self.state == 'wandering':
+            self.wandering()
+            if self.checkInSite():
+                self.state = 'in_site'
+                self.timer = CompetitionSimulation.global_delta_time
+        elif self.state == 'in_site':
+            #print(f"Rabbit ID {self.id} arrived")
+            self.siteBehaviour()
+            if CompetitionSimulation.global_delta_time - self.timer > self.stay_duration:
+                self.state = 'leaving'
+        elif self.state == 'leaving':
+            #print(f"ID {self.id} leaving site")
+            self.leave_site()
+            if not self.checkInSite():
+                self.state = 'wandering'
+
         self.reproduction()
 
     def eaten(self):
@@ -316,6 +342,18 @@ class Rabbits(Agent):
             if random.random() < self.p_reproduction:
                 self.reproduce()
             return
+        
+
+    def leave_site(self):
+        if random.random() < self.config.p_change_direction:
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            self.move = self.move.rotate(angle_change)
+
+        self.move = self.move.normalize() * self.config.movement_speed_r
+        next_step = self.pos + self.move * self.config.delta_time
+        self.obstacle_avoidance(next_step)
+        self.animation(self.pos, next_step)
+        self.pos += self.move * self.config.delta_time
 
     def wandering(self):
         '''
@@ -324,15 +362,19 @@ class Rabbits(Agent):
         while checking if the next step is an obstacle
         
         '''
+        if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
+            if random.random() < self.attraction_probability:
+                #print(f"ID {self.id} going to rabbit heaven")
+                self.move_towards_site()
+            else:
+                if random.random() < self.config.p_change_direction:
+                    angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+                    self.move = self.move.rotate(angle_change)
 
-        if random.random() < self.config.p_change_direction:
-            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
-            self.move = self.move.rotate(angle_change)
-        
         self.move = self.move.normalize() * self.config.movement_speed_r
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
-        self.animation(self.pos,next_step)
+        self.animation(self.pos, next_step)
         self.pos += self.move * self.config.delta_time
 
     def obstacle_avoidance(self, next_step):
@@ -390,8 +432,8 @@ class CompetitionSimulation(Simulation):
         self.fox_population.append(fox_count)
 
 
-n_rabbits = 20
-n_foxes = 3
+n_rabbits = 5
+n_foxes = 0
 
 df = (CompetitionSimulation(
     CompetitionConfig(
