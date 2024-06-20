@@ -432,8 +432,8 @@ class CompetitionSimulation(Simulation):
         self.fox_population.append(fox_count)
 
 
-n_rabbits = 5
-n_foxes = 0
+n_rabbits = 20
+n_foxes = 5
 
 df = (CompetitionSimulation(
     CompetitionConfig(
