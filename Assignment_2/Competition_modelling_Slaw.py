@@ -139,7 +139,7 @@ class Foxes(Agent):
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
-                if dist < 30:
+                if dist < 40:
                     self.health += 5
                     print(f"Fox ID {self.id} ate: +5HP, health: {self.health}")
                     agent.eaten()
@@ -373,7 +373,9 @@ class CompetitionSimulation(Simulation):
         self.rabbit_population = []
         self.fox_population = []
         self.grass_population = []
-
+        self.reproduction_check_interval = 1000  # Adjust as needed
+        self.initial_rabbit_reproduction_prob = Rabbits.p_reproduction  # Store initial values
+        #self.initial_fox_reproduction_prob = Foxes.p_reproduction  # Store initial values
     
 
     def before_update(self):
@@ -382,6 +384,11 @@ class CompetitionSimulation(Simulation):
         self.save_population_data()
         if random.random() < 0.01:  # Adjust the probability as needed
             self.spawn_grass()
+
+        # Check and adjust reproduction probabilities periodically
+        if CompetitionSimulation.global_delta_time % self.reproduction_check_interval == 0:
+            self.adjust_reproduction_probability()
+
         super().before_update()
 
     def rabbit_pop(self):
@@ -405,7 +412,17 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
+    def adjust_reproduction_probability(self):
+        # Adjust reproduction probability for rabbits based on current population
+        current_rabbit_population = sum(1 for agent in self._agents if isinstance(agent, Rabbits) and agent.alive)
+        if current_rabbit_population < 5:  # Example condition, adjust as needed
+            Rabbits.p_reproduction = self.initial_rabbit_reproduction_prob * 2  # Double reproduction probability
+        else:
+            Rabbits.p_reproduction = self.initial_rabbit_reproduction_prob  # Reset to initial value
 
+        # Adjust reproduction probability for foxes based on current population
+        
+        print(f"Reproduction probabilities adjusted: Rabbits: {Rabbits.p_reproduction}")
 
 n_rabbits = 16
 n_foxes = 4
