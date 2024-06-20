@@ -357,7 +357,7 @@ class CompetitionSimulation(Simulation):
         fox_count = sum(1 for agent in self._agents if isinstance(agent, Foxes) and agent.alive)
         if rabbit_count == 0 or fox_count == 0:
             self.stop()
-            
+
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
         list_for_plotting_no_energy.append((rabbit_count, fox_count))
