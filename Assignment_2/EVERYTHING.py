@@ -69,7 +69,6 @@ class Foxes(Agent):
     def eat(self):
 
         #self.reproduction_flag = True
-    
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
@@ -85,9 +84,10 @@ class Foxes(Agent):
                 
     def reproduction(self):
         reproduction_chance = 0.9  # 50% chance to reproduce upon meeting an opposite-sex partner
-        if self.eat_flag and self.gender == 'female':
-            compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender == 'male'), None)
+        if self.eat_flag:
+            compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender != self.gender), None)
             if compatible_partner and random.random() < reproduction_chance:
+                print('Reproduction!')
                 self.reproduce()
                 self.eat_flag = False
         return
@@ -473,4 +473,4 @@ def run_simulation(n_rabbits, n_foxes, duration):
     return list_for_plotting
 
 
-run_simulation(20, 10, 5000)
+run_simulation(30, 20, 5000)
