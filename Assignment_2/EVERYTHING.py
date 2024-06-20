@@ -130,14 +130,21 @@ class Foxes(Agent):
             s = self.separation(fox_neighbours) * 0.5
             c = self.cohesion(fox_neighbours) * 0.5
 
+        if self.eat_flag == True:
+            s *= 1.5
+
         f_total = (a+s+c)/self.config.mass
 
         if self.move.length() > sum_vel.length():
             self.move.normalize() * sum_vel
         
-        
-        # Move the boid
         self.move += f_total
+
+
+        next_step = self.pos + self.move * self.config.delta_time
+        self.obstacle_avoidance(next_step)
+        # Move the boid
+        
         self.pos += self.move * self.config.delta_time * 2
 
 
@@ -344,7 +351,7 @@ class Rabbits(Agent):
             return
 
     def reproduction(self):
-        reproduction_chance = 0.2  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.5  # 50% chance to reproduce upon meeting an opposite-sex partner
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0 and self.gender == 'female':
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Rabbits) and agent[0].gender == 'male'), None)
             if compatible_partner and random.random() < reproduction_chance:

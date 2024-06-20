@@ -295,9 +295,11 @@ class Rabbits(Agent):
 
     def reproduction(self):
         reproduction_chance = 0.3  # 50% chance to reproduce upon meeting an opposite-sex partner
+
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0 and self.gender == 'female':
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Rabbits) and agent[0].gender == 'male'), None)
             if compatible_partner and random.random() < reproduction_chance:
+                print("Reproducing!")
                 self.reproduce()
         return
 
@@ -375,7 +377,7 @@ class CompetitionSimulation(Simulation):
 
 
 n_rabbits = 20
-n_foxes = 10
+n_foxes = 0
 
 df = (CompetitionSimulation(
     CompetitionConfig(

@@ -460,12 +460,6 @@ df = (CompetitionSimulation(
 "Assignment_2/sprite_frames/sprite_b (7).png",
     ]).batch_spawn_agents(n_foxes, Foxes, images=["Assignment_0/images/triangle@50px.png"]).run()
 
-.snapshots.group_by("frame", "image_index")
-.agg(pl.count("id").alias("agents"))
 
 )
 
-print(df)
-
-plot = sns.relplot(x=df["frame"], y =df["agents"], hue=df["image_index"])
-plot.savefig("population.png", dpi = 300)

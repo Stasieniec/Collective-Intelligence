@@ -55,7 +55,7 @@ class CompetitionConfig(Config):
     delta_time: float = 0.5                         # Value for time steps
     mass: int = 20
 
-    movement_speed_f: float = 2                      # Velocity of the Agents
+    movement_speed_f: float = 3                      # Velocity of the Agents
     movement_speed_r: float = 0.5  
     max_angle_change: float = 30.0 
 
@@ -93,7 +93,7 @@ class Foxes(Agent):
         self.wandering()
         self.death()
         self.eat()
-        self.reproduction()
+        #self.reproduction()
 
         #self.save_data("population", Foxes)
 
@@ -134,10 +134,6 @@ class Foxes(Agent):
     #         self.frame = 0
 
 
-
-    def predator(self):
-        pass
-
     def eat(self):
 
         #self.reproduction_flag = True
@@ -145,12 +141,14 @@ class Foxes(Agent):
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
-                if dist < 10:
+                if dist < 20:
                     self.health += 5
                     print(f"Fox ID {self.id} ate: +5HP, health:{self.health}")
                     agent.eaten()
                     agent.death()
+                    self.reproduce()
                     self.eat_flag = True
+
             
 
         
@@ -208,6 +206,9 @@ class Foxes(Agent):
             s = self.separation(fox_neighbours) * 0.5
             c = self.cohesion(fox_neighbours) * 0.5
 
+
+        if self.eat_flag == True:
+            s *= 1.1
         f_total = (a+s+c)/self.config.mass
 
         if self.move.length() > sum_vel.length():
@@ -215,7 +216,7 @@ class Foxes(Agent):
             
         # Move the boid
         self.move += f_total
-        self.pos += self.move * self.config.delta_time * 2
+        self.pos += self.move * self.config.delta_time *1.5
 
     def alignment(self,in_proximity):
         
@@ -371,7 +372,7 @@ class Rabbits(Agent):
         self.move = self.move.normalize() * self.config.movement_speed_r
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
-        self.animation(self.pos,next_step)
+        #self.animation(self.pos,next_step)
         self.pos += self.move * self.config.delta_time
 
     def obstacle_avoidance(self, next_step):
@@ -393,11 +394,13 @@ class CompetitionSimulation(Simulation):
     
     config: CompetitionConfig
     global_delta_time: int = 0
+    
 
     def __init__(self, config):
         super().__init__(config)
         self.rabbit_population = []
         self.fox_population = []
+        self.background_image = pg.image.load("Assignment_2/images/yYC6_f.png")
 
 
     def before_update(self):
@@ -420,9 +423,13 @@ class CompetitionSimulation(Simulation):
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
 
+    def after_update(self):
+        self._screen.blit(self.background_image, (0, 0))
+        return super().after_update()
 
-n_rabbits = 20
-n_foxes = 20
+
+n_rabbits = 5
+n_foxes = 15
 
 df = (CompetitionSimulation(
     CompetitionConfig(

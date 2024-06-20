@@ -13,44 +13,6 @@ import datetime
 import polars as pl
 
 
-'''
----+++ TO DO +++---
-
--- Empty environment based on Lotka-Volterra model:
-    Population of Foxes
-        Foxes reproduce if it eats a rabbit.
-        Certain probability of dying if they don't eat
-    Population of Rabbits
-        Certain probability of spontaneous asexual reproduction
-        Dies if eaten
-
-'''
-
-'''
-
-Animation brainstorm:
-    try to get the direction of the agent so either up down left or right
-    then change image depending on direction
-
-'''
-
-
-'''
----+++---+++ Cool things to add +++---+++---
-- - - Animation for the rabbits and foxes
--+
-- - - Fox stears towards closest rabbit
--+
-- - - Rabbit runs away from Fox
--+ 
-- - - Agents don't collide with eachother
--+
-- - -
--+
-- - -
--+
----+++---+++---+++---+++---+++---+++---+++---
-'''
 
 
 class CompetitionConfig(Config):
@@ -144,7 +106,7 @@ class Foxes(Agent):
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
-                if dist < 10:
+                if dist < 20:
                     self.health += 5
                     print(f"Fox ID {self.id} ate: +5HP, health:{self.health}")
                     agent.eaten()
@@ -354,6 +316,8 @@ class CompetitionSimulation(Simulation):
 
     def fox_pop(self):
         return self.fox_population
+    
+    
 
     def save_population_data(self):
         rabbit_count = sum(1 for agent in self._agents if isinstance(agent, Rabbits) and agent.alive)
@@ -362,8 +326,8 @@ class CompetitionSimulation(Simulation):
         self.fox_population.append(fox_count)
 
 
-n_rabbits = 20
-n_foxes = 3
+n_rabbits = 10
+n_foxes = 10
 
 df = (CompetitionSimulation(
     CompetitionConfig(
