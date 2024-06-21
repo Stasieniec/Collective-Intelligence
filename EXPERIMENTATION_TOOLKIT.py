@@ -72,6 +72,7 @@ def split_sequences(sequences, length):
     targets = []
     for seq in sequences:
         if len(seq) >= length:
+            seq = seq[:length]
             mid = len(seq) // 2
             inputs.append(seq[:mid])
             targets.append(seq[mid:])
