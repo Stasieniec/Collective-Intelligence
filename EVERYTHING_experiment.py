@@ -24,7 +24,7 @@ class CompetitionConfig(Config):
     delta_time: float = 0.5                         # Value for time steps
     mass: int = 20
 
-    movement_speed_f: float = 2                      # Velocity of the Agents
+    movement_speed_f: float = 2                     # Velocity of the Agents
     movement_speed_r: float = 2 
     max_angle_change: float = 30.0 
 
@@ -36,6 +36,8 @@ class Foxes(Agent):
     config: CompetitionConfig
     animation_frames: int = 6
 
+    time_step_d: int = 100
+
     def __init__(self, images, simulation, pos=None, move=None):
         super().__init__(images, simulation, pos, move)
         self.age = 1
@@ -44,7 +46,7 @@ class Foxes(Agent):
             self.move = Vector2(self.config.movement_speed, 0).rotate(angle)
 
         self.state = 'wandering'
-        self.health = 20
+        self.health = 60
 
         self.frame = 0
 
@@ -74,8 +76,8 @@ class Foxes(Agent):
         in_proximity = self.in_proximity_accuracy()
         for agent, dist in in_proximity:
             if isinstance(agent, Rabbits):
-                if dist < 20:
-                    self.health += 5
+                if dist < 25:
+                    self.health += 10
                     agent.eaten()
                     agent.death()
                     self.eat_flag = True
@@ -84,7 +86,7 @@ class Foxes(Agent):
         
                 
     def reproduction(self):
-        reproduction_chance = 0.5  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.3  # 50% chance to reproduce upon meeting an opposite-sex partner
 
         compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender != self.gender), None)
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
@@ -96,7 +98,7 @@ class Foxes(Agent):
 
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
-            self.health -= (1 + self.age)
+            self.health -= (2 + self.age)
             return
 
     def death(self):
@@ -111,9 +113,7 @@ class Foxes(Agent):
         while checking if the next step is an obstacle
         
         '''
-        #fox_neighbours = [(agent, dist) for agent, dist in self.in_proximity_accuracy() if isinstance(agent, Foxes)]
-        
-        #if not fox_neighbours:
+
         if random.random() < self.config.p_change_direction:
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
             self.move = self.move.rotate(angle_change)
@@ -124,68 +124,7 @@ class Foxes(Agent):
         #self.animation(self.pos,next_step)
         self.pos += self.move * self.config.delta_time
         return
-        # else:
-        #     al, sum_vel = self.alignment(fox_neighbours)
-        #     a =  al * 0.5
-        #     s = self.separation(fox_neighbours) * 0.5
-        #     c = self.cohesion(fox_neighbours) * 0.5
 
-        # if self.eat_flag == True:
-        #     s *= 1.5
-
-        # f_total = (a+s+c)/self.config.mass
-
-        # if self.move.length() > sum_vel.length():
-        #     self.move.normalize() * sum_vel
-        
-        # self.move += f_total
-
-
-        # next_step = self.pos + self.move * self.config.delta_time
-        # self.obstacle_avoidance(next_step)
-        # Move the boid
-        
-        # self.pos += self.move * self.config.delta_time * 2
-
-
-    # def alignment(self,in_proximity):
-        
-    #     sum_vel = Vector2(0,0)
-    #     for agent, dist in in_proximity:
-    #         vel = agent.move.normalize()
-    #         sum_vel += vel
-        
-    #     avg_vel = sum_vel / len(in_proximity)
-
-    #     Vboid = self.move
-    #     alignment = avg_vel - Vboid
-
-    #     return alignment, sum_vel
-
-    # def separation(self,in_proximity):
-
-    #     sum_pos = Vector2(0,0)
-    #     for agent, dist in in_proximity:
-    #         sum_pos += self.pos - agent.pos
-
-    #     avg_pos = sum_pos / len(in_proximity)
-
-    #     return avg_pos
-
-    # def cohesion(self,in_proximity):
-
-    #     sum_pos = Vector2(0,0)
-    #     for agent, dist in in_proximity:
-    #         sum_pos += agent.pos
-
-    #     avg_pos = sum_pos / len(in_proximity)
-
-    #     fc = avg_pos - self.pos
-
-    #     Vboid = self.move
-    #     cohesion = fc - Vboid
-
-    #     return cohesion
 
     
     
@@ -229,7 +168,7 @@ class Rabbits(Agent):
 
         self.state = 'wandering'
 
-        self.health = 1
+        self.health = 30
 
         self.frame = 0
         self.energy = 5
@@ -296,6 +235,11 @@ class Rabbits(Agent):
         
         return False
     
+    def death(self):
+        if self.health <= 0: 
+            self.kill()
+            return
+    
     def leave_site(self):
         if random.random() < self.config.p_change_direction:
             angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
@@ -308,6 +252,9 @@ class Rabbits(Agent):
         self.pos += self.move * self.config.delta_time
     
     def siteBehaviour(self):
+        if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
+
+            self.health += 1.1
         self.freeze_movement()   
 
     def change_position(self):
@@ -328,9 +275,11 @@ class Rabbits(Agent):
             self.leave_site()
             if not self.checkInSite():
                 self.state = 'wandering'
+        self.lose_health()
         self.reproduction()
         self.age += 0.001
         self.check_for_grass()
+        self.death()
 
     def eaten(self):
         self.health = 0
@@ -338,8 +287,8 @@ class Rabbits(Agent):
     
     def check_for_grass(self):
         for agent in self._simulation._agents:
-            if isinstance(agent, Grass) and self.pos.distance_to(agent.pos) < 10:  # Adjust distance as needed
-                self.add_health(2)  # Adjust the health gained as needed
+            if isinstance(agent, Grass) and self.pos.distance_to(agent.pos) < 20:  # Adjust distance as needed
+                self.add_health(5)  # Adjust the health gained as needed
                 agent.eaten()  # Remove the
     def death(self):
         if self.health <= 0:
@@ -347,7 +296,7 @@ class Rabbits(Agent):
             return
 
     def reproduction(self):
-        reproduction_chance = 0.8  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.55  # 50% chance to reproduce upon meeting an opposite-sex partner
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0 and self.gender == 'female':
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Rabbits) and agent[0].gender == 'male'), None)
             if compatible_partner and random.random() < reproduction_chance:
@@ -428,7 +377,7 @@ class CompetitionSimulation(Simulation):
         CompetitionSimulation.global_delta_time += 1
 
         self.save_population_data()
-        if random.random() < 0.01:  # Adjust the probability as needed
+        if random.random() < 0.03:  # Adjust the probability as needed
             self.spawn_grass()
 
         super().before_update()
@@ -449,15 +398,18 @@ class CompetitionSimulation(Simulation):
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
         list_for_plotting.append((rabbit_count, fox_count))
+<<<<<<< Updated upstream
         if fox_count == 0 and rabbit_count == 0:
             self.stop()
+=======
+>>>>>>> Stashed changes
 
     
 
 
 def run_simulation(n_rabbits, n_foxes, duration):
-    global list_for_plotting
-    list_for_plotting = []
+    # global list_for_plotting
+    # list_for_plotting = []
     
     n_rabbits = n_rabbits
     n_foxes = n_foxes
@@ -473,4 +425,6 @@ def run_simulation(n_rabbits, n_foxes, duration):
     "Assignment_2/sprite_frames/sprite_l.png"]).batch_spawn_agents(n_foxes, Foxes, 
                           images=
                           ["Assignment_2/sprite_frames_fox/fox_sprite.png"]).run()
-    return list_for_plotting
+    #return list_for_plotting
+
+run_simulation(20,10,5000)
