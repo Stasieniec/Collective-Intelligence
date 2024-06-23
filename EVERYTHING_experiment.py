@@ -398,11 +398,10 @@ class CompetitionSimulation(Simulation):
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
         list_for_plotting.append((rabbit_count, fox_count))
-<<<<<<< Updated upstream
         if fox_count == 0 and rabbit_count == 0:
             self.stop()
-=======
->>>>>>> Stashed changes
+
+        
 
     
 
