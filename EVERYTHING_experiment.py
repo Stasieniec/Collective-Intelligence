@@ -86,7 +86,7 @@ class Foxes(Agent):
         
                 
     def reproduction(self):
-        reproduction_chance = 0.3  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.2  # 50% chance to reproduce upon meeting an opposite-sex partner
 
         compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender != self.gender), None)
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
@@ -296,7 +296,7 @@ class Rabbits(Agent):
             return
 
     def reproduction(self):
-        reproduction_chance = 0.55  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 1  # 50% chance to reproduce upon meeting an opposite-sex partner
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0 and self.gender == 'female':
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Rabbits) and agent[0].gender == 'male'), None)
             if compatible_partner and random.random() < reproduction_chance:
@@ -374,7 +374,7 @@ class CompetitionSimulation(Simulation):
 
 
     def before_update(self):
-        CompetitionSimulation.global_delta_time += 1
+        CompetitionSimulation.global_delta_time += 0.5
 
         self.save_population_data()
         if random.random() < 0.03:  # Adjust the probability as needed
@@ -401,7 +401,9 @@ class CompetitionSimulation(Simulation):
         if fox_count == 0 and rabbit_count == 0:
             self.stop()
 
-        
+        if rabbit_count > 500:
+            self.stop()
+
 
     
 
@@ -426,4 +428,4 @@ def run_simulation(n_rabbits, n_foxes, duration):
                           ["Assignment_2/sprite_frames_fox/fox_sprite.png"]).run()
     #return list_for_plotting
 
-run_simulation(20,10,5000)
+run_simulation(20,3,5000)
