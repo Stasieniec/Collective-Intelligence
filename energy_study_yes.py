@@ -416,6 +416,4 @@ def run_simulation(n_rabbits, n_foxes, duration):
                            ]).run()
     return list_for_plotting
 
-
-import matplotlib.pyplot as plt
-
+run_simulation(10, 4, 200)
