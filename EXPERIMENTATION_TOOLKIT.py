@@ -30,7 +30,7 @@ def run_experiments(duration, num_rows, filename, rabbit_range = (2, 100), fox_r
                 print("Error with this simulation!")
 
 # Example use:
-run_experiments(200, 500, 'final_data_thor.csv', (2,100), (2,100))
+run_experiments(10000, 10000, 'final_data_thor.csv', (2,100), (2,100))
 
 # Random data generator for testing the neural network
 def generate_random_data(num_entries, num_rows, filename):

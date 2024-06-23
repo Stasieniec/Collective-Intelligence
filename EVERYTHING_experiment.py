@@ -82,7 +82,7 @@ class Foxes(Agent):
         
                 
     def reproduction(self):
-        reproduction_chance = 0.9  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.5  # 50% chance to reproduce upon meeting an opposite-sex partner
         if self.eat_flag:
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender != self.gender), None)
             if compatible_partner and random.random() < reproduction_chance:
@@ -108,81 +108,81 @@ class Foxes(Agent):
         while checking if the next step is an obstacle
         
         '''
-        fox_neighbours = [(agent, dist) for agent, dist in self.in_proximity_accuracy() if isinstance(agent, Foxes)]
+        #fox_neighbours = [(agent, dist) for agent, dist in self.in_proximity_accuracy() if isinstance(agent, Foxes)]
         
-        if not fox_neighbours:
-            if random.random() < self.config.p_change_direction:
-                angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
-                self.move = self.move.rotate(angle_change)
-            
-            self.move = self.move.normalize() * self.config.movement_speed_f
-            next_step = self.pos + self.move * self.config.delta_time
-            self.obstacle_avoidance(next_step)
-            #self.animation(self.pos,next_step)
-            self.pos += self.move * self.config.delta_time
-            return
-        else:
-            al, sum_vel = self.alignment(fox_neighbours)
-            a =  al * 0.5
-            s = self.separation(fox_neighbours) * 0.5
-            c = self.cohesion(fox_neighbours) * 0.5
-
-        if self.eat_flag == True:
-            s *= 1.5
-
-        f_total = (a+s+c)/self.config.mass
-
-        if self.move.length() > sum_vel.length():
-            self.move.normalize() * sum_vel
+        #if not fox_neighbours:
+        if random.random() < self.config.p_change_direction:
+            angle_change = random.uniform(-self.config.max_angle_change, self.config.max_angle_change)
+            self.move = self.move.rotate(angle_change)
         
-        self.move += f_total
-
-
+        self.move = self.move.normalize() * self.config.movement_speed_f
         next_step = self.pos + self.move * self.config.delta_time
         self.obstacle_avoidance(next_step)
+        #self.animation(self.pos,next_step)
+        self.pos += self.move * self.config.delta_time
+        return
+        # else:
+        #     al, sum_vel = self.alignment(fox_neighbours)
+        #     a =  al * 0.5
+        #     s = self.separation(fox_neighbours) * 0.5
+        #     c = self.cohesion(fox_neighbours) * 0.5
+
+        # if self.eat_flag == True:
+        #     s *= 1.5
+
+        # f_total = (a+s+c)/self.config.mass
+
+        # if self.move.length() > sum_vel.length():
+        #     self.move.normalize() * sum_vel
+        
+        # self.move += f_total
+
+
+        # next_step = self.pos + self.move * self.config.delta_time
+        # self.obstacle_avoidance(next_step)
         # Move the boid
         
-        self.pos += self.move * self.config.delta_time * 2
+        # self.pos += self.move * self.config.delta_time * 2
 
 
-    def alignment(self,in_proximity):
+    # def alignment(self,in_proximity):
         
-        sum_vel = Vector2(0,0)
-        for agent, dist in in_proximity:
-            vel = agent.move.normalize()
-            sum_vel += vel
+    #     sum_vel = Vector2(0,0)
+    #     for agent, dist in in_proximity:
+    #         vel = agent.move.normalize()
+    #         sum_vel += vel
         
-        avg_vel = sum_vel / len(in_proximity)
+    #     avg_vel = sum_vel / len(in_proximity)
 
-        Vboid = self.move
-        alignment = avg_vel - Vboid
+    #     Vboid = self.move
+    #     alignment = avg_vel - Vboid
 
-        return alignment, sum_vel
+    #     return alignment, sum_vel
 
-    def separation(self,in_proximity):
+    # def separation(self,in_proximity):
 
-        sum_pos = Vector2(0,0)
-        for agent, dist in in_proximity:
-            sum_pos += self.pos - agent.pos
+    #     sum_pos = Vector2(0,0)
+    #     for agent, dist in in_proximity:
+    #         sum_pos += self.pos - agent.pos
 
-        avg_pos = sum_pos / len(in_proximity)
+    #     avg_pos = sum_pos / len(in_proximity)
 
-        return avg_pos
+    #     return avg_pos
 
-    def cohesion(self,in_proximity):
+    # def cohesion(self,in_proximity):
 
-        sum_pos = Vector2(0,0)
-        for agent, dist in in_proximity:
-            sum_pos += agent.pos
+    #     sum_pos = Vector2(0,0)
+    #     for agent, dist in in_proximity:
+    #         sum_pos += agent.pos
 
-        avg_pos = sum_pos / len(in_proximity)
+    #     avg_pos = sum_pos / len(in_proximity)
 
-        fc = avg_pos - self.pos
+    #     fc = avg_pos - self.pos
 
-        Vboid = self.move
-        cohesion = fc - Vboid
+    #     Vboid = self.move
+    #     cohesion = fc - Vboid
 
-        return cohesion
+    #     return cohesion
 
     
     
@@ -344,7 +344,7 @@ class Rabbits(Agent):
             return
 
     def reproduction(self):
-        reproduction_chance = 0.5  # 50% chance to reproduce upon meeting an opposite-sex partner
+        reproduction_chance = 0.8  # 50% chance to reproduce upon meeting an opposite-sex partner
         if CompetitionSimulation.global_delta_time % self.time_step_d == 0 and self.gender == 'female':
             compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Rabbits) and agent[0].gender == 'male'), None)
             if compatible_partner and random.random() < reproduction_chance:
@@ -458,7 +458,7 @@ def run_simulation(n_rabbits, n_foxes, duration):
     CompetitionConfig(
         duration=duration,
         fps_limit=120,
-        seed=1,
+        seed=0,
         movement_speed=1,
         radius=50,
         image_rotation=True,
