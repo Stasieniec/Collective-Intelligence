@@ -12,6 +12,8 @@ from datetime import timedelta
 import datetime
 import polars as pl
 
+
+
 list_for_plotting = []
 class Agent(BaseAgent):
     def __init__(self, images, simulation, pos=None, move=None):
@@ -83,12 +85,13 @@ class Foxes(Agent):
                 
     def reproduction(self):
         reproduction_chance = 0.5  # 50% chance to reproduce upon meeting an opposite-sex partner
-        if self.eat_flag:
-            compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender != self.gender), None)
+
+        compatible_partner = next((agent for agent in self.in_proximity_accuracy() if isinstance(agent[0], Foxes) and agent[0].gender != self.gender), None)
+        if CompetitionSimulation.global_delta_time % self.time_step_d == 0:
             if compatible_partner and random.random() < reproduction_chance:
                 self.reproduce()
-                self.eat_flag = False
-        return
+                #self.eat_flag = False
+            return
 
 
     def lose_health(self):
@@ -446,6 +449,10 @@ class CompetitionSimulation(Simulation):
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
         list_for_plotting.append((rabbit_count, fox_count))
+        if fox_count == 0:
+            CompetitionConfig.delta_time = 10000
+
+    
 
 
 def run_simulation(n_rabbits, n_foxes, duration):
