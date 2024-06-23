@@ -469,7 +469,7 @@ def run_simulation(n_rabbits, n_foxes, duration):
     CompetitionConfig(
         duration=duration,
         fps_limit=120,
-        seed=1,
+        seed=0,
         movement_speed=1,
         radius=50,
         image_rotation=True,
