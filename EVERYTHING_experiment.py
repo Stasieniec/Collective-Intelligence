@@ -1,4 +1,4 @@
-from vi import Agent as BaseAgent, Simulation, Config
+from vi import Agent as BaseAgent, Simulation, Config, Window
 from pygame.math import Vector2
 import random
 import pygame as pg
@@ -361,10 +361,13 @@ class Grass(Agent):
     def eaten(self):
         self.kill()  # Remove grass when eaten
 
+
+
 class CompetitionSimulation(Simulation):
     
     config: CompetitionConfig
     global_delta_time: int = 0
+
 
     def __init__(self, config):
         super().__init__(config)
@@ -422,10 +425,13 @@ def run_simulation(n_rabbits, n_foxes, duration):
         movement_speed=1,
         radius=50,
         image_rotation=True,
+        window=Window(width=300, height=300)
     )).batch_spawn_agents(n_rabbits, Rabbits, images=[
     "Assignment_2/sprite_frames/sprite_l.png"]).batch_spawn_agents(n_foxes, Foxes, 
                           images=
                           ["Assignment_2/sprite_frames_fox/fox_sprite.png"]).run()
     #return list_for_plotting
+    Window.width = 100
+
 
 run_simulation(20,3,5000)
