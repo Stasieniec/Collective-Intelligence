@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import ast
 
-def run_experiments(duration, num_rows, filename, rabbit_range = (2, 100), fox_range = (2, 100)):
+def run_experiments(duration, num_rows, filename, rabbit_range = (2, 50), fox_range = (2, 50)):
         # Generate each row using the generate() function
         for i in range(num_rows):
             num_rabbits = random.randint(rabbit_range[0], rabbit_range[1])
@@ -30,7 +30,7 @@ def run_experiments(duration, num_rows, filename, rabbit_range = (2, 100), fox_r
                 print("Error with this simulation!")
 
 # Example use:
-run_experiments(5000, 5, 'final_data_thor.csv', (2,100), (2,100))
+#run_experiments(5000, 5, 'final_data_thor.csv', (2,100), (2,100))
 
 # Random data generator for testing the neural network
 def generate_random_data(num_entries, num_rows, filename):

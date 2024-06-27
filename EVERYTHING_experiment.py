@@ -401,10 +401,8 @@ class CompetitionSimulation(Simulation):
         self.rabbit_population.append(rabbit_count)
         self.fox_population.append(fox_count)
         list_for_plotting.append((rabbit_count, fox_count))
+        
         if fox_count == 0 and rabbit_count == 0:
-            self.stop()
-
-        if rabbit_count > 500:
             self.stop()
 
 
@@ -412,26 +410,28 @@ class CompetitionSimulation(Simulation):
 
 
 def run_simulation(n_rabbits, n_foxes, duration):
-    # global list_for_plotting
-    # list_for_plotting = []
+    global list_for_plotting
+    list_for_plotting = []
     
     n_rabbits = n_rabbits
     n_foxes = n_foxes
     CompetitionSimulation(
     CompetitionConfig(
         duration=duration,
-        fps_limit=120,
+        fps_limit=0,
         seed=0,
         movement_speed=1,
-        radius=50,
+        radius=10,
         image_rotation=True,
         window=Window(width=300, height=300)
     )).batch_spawn_agents(n_rabbits, Rabbits, images=[
     "Assignment_2/sprite_frames/sprite_l.png"]).batch_spawn_agents(n_foxes, Foxes, 
                           images=
                           ["Assignment_2/sprite_frames_fox/fox_sprite.png"]).run()
-    #return list_for_plotting
+    
     Window.width = 100
+    return list_for_plotting
+    
 
 
-run_simulation(20,3,5000)
+#run_simulation(20,1,2000)
