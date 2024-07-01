@@ -1,5 +1,5 @@
 # When changing the duration for testing, remember to delete previous data
-import EVERYTHING_experiment as experiment
+import NO_ENERGY_CSV as experiment
 import random
 import time
 import random
@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import ast
 
-def run_experiments(duration, num_rows, filename, rabbit_range = (2, 50), fox_range = (2, 50)):
+def run_experiments(duration, num_rows, filename, rabbit_range = (2, 100), fox_range = (2, 100)):
         # Generate each row using the generate() function
         for i in range(num_rows):
             num_rabbits = random.randint(rabbit_range[0], rabbit_range[1])
