@@ -372,7 +372,6 @@ def run_simulation(n_rabbits, n_foxes, duration):
     CompetitionSimulation(
     CompetitionConfig(
         duration=duration,
-        fps_limit=120,
         seed=1,
         movement_speed=1,
         radius=50,
@@ -421,3 +420,6 @@ def run_simulation(n_rabbits, n_foxes, duration):
                            
                            ]).run()
     return list_for_plotting_no_energy
+
+
+run_simulation(20, 3, 100)

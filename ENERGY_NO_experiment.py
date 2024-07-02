@@ -149,7 +149,6 @@ class Foxes(Agent):
             if isinstance(agent, Rabbits):
                 if dist < 10:
                     self.health += 5
-                    print(f"Fox ID {self.id} ate: +5HP, health:{self.health}")
                     agent.eaten()
                     agent.death()
                     self.eat_flag = True
@@ -167,13 +166,11 @@ class Foxes(Agent):
     def lose_health(self):
         if CompetitionSimulation.global_delta_time % self.config.time_step_d == 0:
             if random.random() < self.death_probability:
-                print(f"Fox probabilistically died")
                 self.health = 0
             return
 
     def death(self):
         if self.health == 0:
-            print(f"Fox ID {self.id} died of starvation, silly fox")
             self.kill()
             return
 
@@ -283,7 +280,6 @@ class Rabbits(Agent):
 
     def death(self):
         if self.health == 0:
-            print("Rabbit died by fox, health 0")
             self.kill()
             return
 
@@ -372,7 +368,7 @@ def run_simulation(n_rabbits, n_foxes, duration):
     CompetitionSimulation(
     CompetitionConfig(
         duration=duration,
-        fps_limit=120,
+        fps_limit=0,
         seed=1,
         movement_speed=1,
         radius=50,
