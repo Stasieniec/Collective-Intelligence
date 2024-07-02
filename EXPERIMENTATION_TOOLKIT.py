@@ -1,5 +1,6 @@
 # When changing the duration for testing, remember to delete previous data
-import EVERYTHING_experiment as experiment
+# import EVERYTHING_experiment as experiment
+import ENERGY_NO_experiment as experiment
 import random
 import time
 import random
